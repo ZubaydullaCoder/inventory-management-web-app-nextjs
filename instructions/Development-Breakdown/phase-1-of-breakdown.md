@@ -13,7 +13,7 @@ _This section serves as a detailed checklist. The AI agent's implementation of t
 - **Authenticated Layout & Onboarding:**
   - [ ] **Layout:** Upon logging in and landing at `/dashboard`, the main authenticated `AppLayout` must be displayed, consisting of a persistent `Sidebar` (left) and a `TopBar` (top).
   - [ ] **Onboarding Component:** The main content area of the `/dashboard` page must display the "Onboarding Component" checklist for a new user whose account has no data.
-  - [ ] **Navigation:** Clicking the buttons in the Onboarding Component (e.g., "Go to Categories") must correctly navigate the user to the respective "Cockpit" creation page (e.g., `/inventory/categories/new`).
+  - [ ] **Navigation:** Clicking the buttons in the Onboarding Component (e.g., "Go to Categories") must correctly navigate the user to the respective "Cockpit" creation page (e.g., `/dashboard/inventory/categories/new`).
 - **"Cockpit" Pages Functionality:**
   - [ ] **Layout Consistency:** The pages for creating new Categories, Suppliers, Customers, and Products must all use the consistent two-column "Cockpit" layout (`Form` on the left, `SessionCreationList` on the right).
   - [ ] **Form Submission:** Pressing "Enter" or clicking the "Save and Add Another" button in any Cockpit form must:
@@ -28,9 +28,9 @@ _This section serves as a detailed checklist. The AI agent's implementation of t
   - [ ] **Update Logic:** Saving the modal form must trigger a `PUT` request to the correct API endpoint. On success, the modal must close, a success notification must be shown, and the item's data in the `SessionCreationList` must be visibly updated without a page reload.
   - [ ] **Reload Behavior:** Reloading the page while the edit modal is open must redirect the user back to the underlying "Cockpit" page.
 - **Finishing the Session:**
-  - [ ] **Trigger:** Clicking the "Save and Finish" button must save the current form's data (if any) and then redirect the user to the main `DataTable` view for that data type (e.g., from `/inventory/products/new` to `/inventory/products`).
+  - [ ] **Trigger:** Clicking the "Save and Finish" button must save the current form's data (if any) and then redirect the user to the main `DataTable` view for that data type (e.g., from `/dashboard/inventory/products/new` to `/dashboard/inventory/products`).
 - **Main Data List Views (`DataTable`):**
-  - [ ] **Page Structure:** The main list pages (e.g., `/inventory/products`) must have a `PageHeader` with the correct title and an "Add New Product" button that links to the "Cockpit" page.
+  - [ ] **Page Structure:** The main list pages (e.g., `/dashboard/inventory/products`) must have a `PageHeader` with the correct title and an "Add New Product" button that links to the "Cockpit" page.
   - [ ] **Data Display:** The `DataTable` component must correctly fetch (using the Hybrid SSR pattern) and display the list of items created by the user.
   - [ ] **Empty State:** If no data exists for a given type, the `DataTable` area must display an `EmptyState` component guiding the user to add their first item.
   - [ ] **Actions Menu:** Each row in the `DataTable` must have an "Actions" dropdown menu with an "Edit" option that correctly opens the intercepting edit modal.
@@ -48,7 +48,7 @@ _This section serves as a detailed checklist. The AI agent's implementation of t
   - Ensure all models have a direct relation to the `User` model to enforce data ownership. The `Product` model should have optional relations to `Category` and `Supplier`.
 - **Task 1.3 (Database Migration):** Run the Prisma migrate command with a name like `add-core-data-models`.
 - **Task 1.4 (Authenticated Layout):**
-  - Create the main authenticated layout file at `src/app/(dashboard)/layout.jsx`.
+  - Create the main authenticated layout file at `src/app/(dashboard)/dashboard/layout.jsx`.
   - This component will render the `Sidebar` and `TopBar` components.
 - **Task 1.5 (Core Components):**
   - Create the `src/components/layouts/sidebar.jsx` component for primary navigation.
@@ -68,7 +68,7 @@ _This section serves as a detailed checklist. The AI agent's implementation of t
 _This workflow will be implemented for Products first, then the pattern will be replicated for Categories, Suppliers, and Customers._
 
 - **Task 3.1 (API Endpoint):** Create the API route `src/app/api/products/route.js`. Implement the `POST` handler for creating a new product. It must follow the Backend Design System: check auth, validate data with Zod, and call a data layer function to interact with Prisma.
-- **Task 3.2 (Page Creation):** Create the "Cockpit" page at `src/app/(dashboard)/inventory/products/new/page.jsx`.
+- **Task 3.2 (Page Creation):** Create the "Cockpit" page at `src/app/(dashboard)/dashboard/inventory/products/new/page.jsx`.
 - **Task 3.3 (Layout):** Implement the two-column layout as defined in the Design System guide.
 - **Task 3.4 (Form Component):** Create the `src/components/features/products/product-creation-form.jsx` client component.
   - Use `react-hook-form` and `zod` for form state management and validation.
@@ -84,17 +84,17 @@ _This workflow will be implemented for Products first, then the pattern will be 
   - Create the reusable `src/components/ui/data-table.jsx` component, following Guide #11 and the `shadcn/ui` examples.
 - **Task 4.2 (Column Definition):** Create `src/components/features/products/product-columns.jsx`. Define the columns for the products table, including an "Actions" column that renders a `DropdownMenu` with an "Edit" item.
 - **Task 4.3 (API Endpoint):** In `src/app/api/products/route.js`, implement the `GET` handler for fetching a paginated list of products. In a new `[id]/route.js` file, implement `GET` (for one product) and `PUT` (for updates).
-- **Task 4.4 (Page Creation):** Create the main product list page at `src/app/(dashboard)/inventory/products/page.jsx`.
+- **Task 4.4 (Page Creation):** Create the main product list page at `src/app/(dashboard)/dashboard/inventory/products/page.jsx`.
 - **Task 4.5 (Data Fetching & Display):**
   - This Server Component will use the Hybrid `fetch` pattern to get the initial list of products.
   - It will pass the data and columns to the `DataTable` component.
   - It will handle the case where no products exist by showing the `EmptyState` component.
 - **Task 4.6 (Modal Editing Setup):**
-  - Implement the intercepting route structure for editing: `src/app/(dashboard)/products/@modal/(..)products/[id]/edit/`.
-  - Create the redirect fallback page at `src/app/(dashboard)/products/[id]/edit/page.jsx`.
-  - Update the dashboard layout (`(dashboard)/layout.jsx`) to render the `@modal` slot.
+  - Implement the intercepting route structure for editing: `src/app/(dashboard)/dashboard/products/@modal/(..)products/[id]/edit/`.
+  - Create the redirect fallback page at `src/app/(dashboard)/dashboard/products/[id]/edit/page.jsx`.
+  - Update the dashboard layout (`(dashboard)/dashboard/layout.jsx`) to render the `@modal` slot.
 - **Task 4.7 (Edit Modal UI):**
-  - Create the modal UI at `src/app/(dashboard)/products/@modal/(..)products/[id]/edit/page.jsx`.
+  - Create the modal UI at `src/app/(dashboard)/dashboard/products/@modal/(..)products/[id]/edit/page.jsx`.
   - This component will fetch the specific product's data and pass it to a reusable `product-form` component (which can be adapted from the creation form).
   - The form's `onSubmit` will use a `useMutation` hook to call the `PUT /api/products/[id]` endpoint.
 

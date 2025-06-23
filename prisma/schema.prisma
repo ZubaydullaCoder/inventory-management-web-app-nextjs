@@ -15,32 +15,119 @@ enum SubscriptionStatus {
   BASIC
   STANDARD
   PREMIUM
+  EXPIRED
 }
 
 model User {
-  id            String   @id @default(cuid())
-  name          String?
-  email         String   @unique
-  image         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Relations
-  subscription  Subscription?
-
-  @@map("users")
+  id       String  @id @default(cuid())
+  name     String?
+  email    String  @unique
+  image    String?
+  
+  // Data ownership relations
+  categories   Category[]
+  suppliers    Supplier[]
+  customers    Customer[]
+  products     Product[]
+  
+  // Subscription relation
+  subscription Subscription?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Subscription {
   id        String             @id @default(cuid())
   status    SubscriptionStatus @default(TRIAL)
-  expiresAt DateTime?
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
+  expiresAt DateTime
+  
+  // Relation to User
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
 
+model Category {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  
+  // Data ownership
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
   // Relations
-  userId    String @unique
-  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products Product[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, name]) // Prevent duplicate category names per user
+}
 
-  @@map("subscriptions")
+model Supplier {
+  id           String  @id @default(cuid())
+  name         String
+  contactEmail String?
+  contactPhone String?
+  address      String?
+  
+  // Data ownership
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Relations
+  products Product[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, name]) // Prevent duplicate supplier names per user
+}
+
+model Customer {
+  id           String  @id @default(cuid())
+  name         String
+  contactEmail String?
+  contactPhone String?
+  address      String?
+  
+  // Data ownership
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, name]) // Prevent duplicate customer names per user
+}
+
+model Product {
+  id           String  @id @default(cuid())
+  name         String
+  description  String?
+  sku          String?
+  sellingPrice Float
+  purchasePrice Float?
+  stock        Int     @default(0)
+  reorderPoint Int     @default(0)
+  
+  // Data ownership
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Optional relations
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, sku]) // Prevent duplicate SKUs per user
 }
