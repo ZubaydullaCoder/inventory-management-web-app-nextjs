@@ -26,12 +26,12 @@ export default async function DashboardLayout({ children, modal }) {
         <Sidebar />
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           {/* Top Bar */}
           <TopBar user={session.user} />
 
           {/* Page Content */}
-          <main className="flex-1 p-6">{children}</main>
+          <main className="flex-1 p-6 pt-16 md:pt-6">{children}</main>
         </div>
       </div>
 

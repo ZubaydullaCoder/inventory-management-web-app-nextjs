@@ -1,5 +1,9 @@
 // /src/components/layouts/sidebar.jsx
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Package,
@@ -9,7 +13,12 @@ import {
   Tags,
   BarChart3,
   Settings,
+  Menu,
+  X,
+  ChevronRight,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 /**
  * Navigation menu items for the sidebar
@@ -29,83 +38,280 @@ const navigationItems = [
   },
   {
     title: "Inventory",
-    href: "/inventory",
+    href: "/dashboard/inventory",
     icon: Package,
     children: [
-      { title: "Products", href: "/inventory/products", icon: Package },
-      { title: "Categories", href: "/inventory/categories", icon: Tags },
+      {
+        title: "Products",
+        href: "/dashboard/inventory/products",
+        icon: Package,
+      },
+      {
+        title: "Categories",
+        href: "/dashboard/inventory/categories",
+        icon: Tags,
+      },
     ],
   },
   {
     title: "Sales",
-    href: "/sales",
+    href: "/dashboard/sales",
     icon: ShoppingCart,
   },
   {
     title: "Customers",
-    href: "/customers",
+    href: "/dashboard/customers",
     icon: Users,
   },
   {
     title: "Suppliers",
-    href: "/suppliers",
+    href: "/dashboard/suppliers",
     icon: Truck,
   },
   {
     title: "Reports",
-    href: "/reports",
+    href: "/dashboard/reports",
     icon: BarChart3,
   },
   {
     title: "Settings",
-    href: "/settings",
+    href: "/dashboard/settings",
     icon: Settings,
   },
 ];
 
 /**
- * Sidebar navigation component with collapsible menu items
- * Displays primary navigation for authenticated users
- * @returns {JSX.Element} Sidebar with navigation menu
+ * Individual navigation item component
+ * @param {Object} props - Component props
+ * @param {NavItem} props.item - Navigation item data
+ * @param {boolean} props.isCollapsed - Whether sidebar is collapsed
+ * @param {string} props.currentPath - Current pathname
+ * @returns {JSX.Element} Navigation item
  */
-export default function Sidebar() {
+function NavItem({ item, isCollapsed, currentPath }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const hasChildren = item.children && item.children.length > 0;
+  const isActive = currentPath === item.href;
+  const hasActiveChild =
+    hasChildren && item.children.some((child) => currentPath === child.href);
+
+  // Auto-expand if has active child
+  useEffect(() => {
+    if (hasActiveChild && !isCollapsed) {
+      setIsExpanded(true);
+    }
+  }, [hasActiveChild, isCollapsed]);
+
+  // Collapse children when sidebar collapses
+  useEffect(() => {
+    if (isCollapsed) {
+      setIsExpanded(false);
+    }
+  }, [isCollapsed]);
+
+  const handleToggle = () => {
+    if (!isCollapsed && hasChildren) {
+      setIsExpanded(!isExpanded);
+    }
+  };
+
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 min-h-screen">
-      <div className="p-6">
-        <h1 className="text-xl font-bold text-gray-900">Inventory Manager</h1>
+    <div className="mb-1">
+      <div
+        className={cn(
+          "flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer group",
+          isActive || hasActiveChild
+            ? "bg-primary/10 text-primary"
+            : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+        )}
+        onClick={handleToggle}
+      >
+        <Link
+          href={item.href}
+          className="flex items-center flex-1 min-w-0"
+          onClick={(e) => hasChildren && e.preventDefault()}
+        >
+          <item.icon
+            className={cn(
+              "w-5 h-5 flex-shrink-0",
+              isActive || hasActiveChild ? "text-primary" : "text-gray-400"
+            )}
+          />
+          {!isCollapsed && <span className="ml-3 truncate">{item.title}</span>}
+        </Link>
+
+        {hasChildren && !isCollapsed && (
+          <ChevronRight
+            className={cn(
+              "w-4 h-4 flex-shrink-0 transition-transform text-gray-400",
+              isExpanded && "rotate-90"
+            )}
+          />
+        )}
       </div>
 
-      <nav className="mt-6">
-        <div className="px-3">
-          {navigationItems.map((item) => (
-            <div key={item.href} className="mb-1">
+      {/* Sub-navigation */}
+      {hasChildren && isExpanded && !isCollapsed && (
+        <div className="ml-6 mt-1 space-y-1">
+          {item.children.map((child) => {
+            const isChildActive = currentPath === child.href;
+            return (
               <Link
-                href={item.href}
-                className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors"
+                key={child.href}
+                href={child.href}
+                className={cn(
+                  "flex items-center px-3 py-2 text-sm rounded-md transition-colors",
+                  isChildActive
+                    ? "bg-primary/10 text-primary"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                )}
               >
-                <item.icon className="w-5 h-5 mr-3 text-gray-400" />
-                {item.title}
+                <child.icon
+                  className={cn(
+                    "w-4 h-4 mr-3 flex-shrink-0",
+                    isChildActive ? "text-primary" : "text-gray-400"
+                  )}
+                />
+                <span className="truncate">{child.title}</span>
               </Link>
+            );
+          })}
+        </div>
+      )}
 
-              {/* Sub-navigation */}
-              {item.children && (
-                <div className="ml-6 mt-1 space-y-1">
-                  {item.children.map((child) => (
-                    <Link
-                      key={child.href}
-                      href={child.href}
-                      className="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors"
-                    >
-                      <child.icon className="w-4 h-4 mr-3 text-gray-400" />
-                      {child.title}
-                    </Link>
-                  ))}
-                </div>
-              )}
+      {/* Tooltip for collapsed state */}
+      {isCollapsed && (
+        <div className="absolute left-16 top-0 invisible group-hover:visible z-50 bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap">
+          {item.title}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Sidebar navigation component with collapsible functionality
+ * Displays primary navigation for authenticated users with responsive behavior
+ * @returns {JSX.Element} Collapsible sidebar with navigation menu
+ */
+export default function Sidebar() {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Handle responsive behavior
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768;
+      if (isMobile) {
+        setIsCollapsed(true);
+        setIsMobileOpen(false);
+      }
+    };
+
+    // Set initial state
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) {
+      setIsCollapsed(true);
+    }
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [pathname]);
+
+  const toggleCollapse = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
+  const toggleMobileMenu = () => {
+    setIsMobileOpen(!isMobileOpen);
+  };
+
+  return (
+    <>
+      {/* Mobile menu button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="fixed top-4 left-4 z-50 md:hidden"
+        onClick={toggleMobileMenu}
+      >
+        {isMobileOpen ? (
+          <X className="w-5 h-5" />
+        ) : (
+          <Menu className="w-5 h-5" />
+        )}
+      </Button>
+
+      {/* Mobile overlay */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          "bg-white border-r border-gray-200 min-h-screen transition-all duration-300 flex flex-col z-50",
+          // Desktop responsive width
+          isCollapsed ? "w-16" : "w-64",
+          // Mobile positioning
+          "fixed md:relative",
+          isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        )}
+      >
+        {/* Header */}
+        <div
+          className={cn(
+            "p-6 border-b border-gray-100 flex items-center",
+            isCollapsed && "px-3 justify-center"
+          )}
+        >
+          {!isCollapsed ? (
+            <h1 className="text-xl font-bold text-gray-900">
+              Inventory Manager
+            </h1>
+          ) : (
+            <Package className="w-8 h-8 text-primary" />
+          )}
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 mt-6 px-3 overflow-y-auto">
+          {navigationItems.map((item) => (
+            <div key={item.href} className="relative">
+              <NavItem
+                item={item}
+                isCollapsed={isCollapsed}
+                currentPath={pathname}
+              />
             </div>
           ))}
+        </nav>
+
+        {/* Toggle button - Desktop only */}
+        <div className="p-3 border-t border-gray-100 hidden md:block">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleCollapse}
+            className={cn(
+              "w-full flex items-center",
+              isCollapsed ? "justify-center" : "justify-start"
+            )}
+          >
+            <Menu className="w-4 h-4" />
+            {!isCollapsed && <span className="ml-2">Collapse</span>}
+          </Button>
         </div>
-      </nav>
-    </aside>
+      </aside>
+    </>
   );
 }
