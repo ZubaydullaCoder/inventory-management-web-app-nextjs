@@ -34,7 +34,7 @@ export default async function ProductsPage() {
         actionLabel="Add New Product"
         actionHref="/dashboard/inventory/products/new"
       />
-      <ProductDataTable products={products} />
+      <ProductDataTable initialProducts={products} />
     </div>
   );
 }

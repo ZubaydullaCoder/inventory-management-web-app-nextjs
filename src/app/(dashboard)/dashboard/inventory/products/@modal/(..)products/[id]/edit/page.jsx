@@ -1,9 +1,9 @@
 // /src/app/(dashboard)/dashboard/inventory/products/@modal/(..)products/[id]/edit/page.jsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 /**
  * Product edit form validation schema
@@ -92,7 +93,10 @@ async function updateProduct(productId, productData) {
 export default function EditProductModal({ params }) {
   const router = useRouter();
   const [open, setOpen] = useState(true);
-  const productId = params.id;
+  const queryClient = useQueryClient();
+
+  // Unwrap params Promise (Next.js App Router best practice)
+  const { id: productId } = use(params);
 
   // Fetch product data
   const { data: product, isLoading } = useQuery({
@@ -127,8 +131,18 @@ export default function EditProductModal({ params }) {
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: (data) => updateProduct(productId, data),
-    onSuccess: () => {
+    onSuccess: (updatedProductResponse) => {
       toast.success("Product updated successfully!");
+
+      // Invalidate the list query to trigger a refetch in the data table
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+
+      // Also, optimistically update the specific product's query cache
+      queryClient.setQueryData(
+        ["product", productId],
+        updatedProductResponse.data
+      );
+
       handleClose();
     },
     onError: (error) => {
@@ -156,6 +170,9 @@ export default function EditProductModal({ params }) {
     return (
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="max-w-md">
+          <VisuallyHidden asChild>
+            <DialogTitle>Loading</DialogTitle>
+          </VisuallyHidden>
           <div className="flex items-center justify-center p-8">
             <div className="text-sm text-muted-foreground">Loading...</div>
           </div>
@@ -168,6 +185,9 @@ export default function EditProductModal({ params }) {
     return (
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="max-w-md">
+          <VisuallyHidden asChild>
+            <DialogTitle>Error</DialogTitle>
+          </VisuallyHidden>
           <div className="flex items-center justify-center p-8">
             <div className="text-sm text-red-500">Product not found</div>
           </div>
