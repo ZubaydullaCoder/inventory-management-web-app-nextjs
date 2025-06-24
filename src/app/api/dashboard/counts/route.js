@@ -1,9 +1,7 @@
 // /src/app/api/dashboard/counts/route.js
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-import prisma from "@/lib/prisma";
+import { getDashboardCounts } from "@/lib/data/dashboard";
 
 /**
  * Dashboard counts response data
@@ -32,21 +30,7 @@ export async function GET(request) {
     const userId = session.user.id;
 
     // Fetch counts in parallel for better performance
-    const [categoriesCount, suppliersCount, customersCount, productsCount] =
-      await Promise.all([
-        prisma.category.count({ where: { userId } }),
-        prisma.supplier.count({ where: { userId } }),
-        prisma.customer.count({ where: { userId } }),
-        prisma.product.count({ where: { userId } }),
-      ]);
-
-    /** @type {DashboardCountsResponse} */
-    const counts = {
-      categories: categoriesCount,
-      suppliers: suppliersCount,
-      customers: customersCount,
-      products: productsCount,
-    };
+    const counts = await getDashboardCounts(userId);
 
     return NextResponse.json(counts);
   } catch (error) {
@@ -55,7 +39,5 @@ export async function GET(request) {
       { error: "Internal server error" },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

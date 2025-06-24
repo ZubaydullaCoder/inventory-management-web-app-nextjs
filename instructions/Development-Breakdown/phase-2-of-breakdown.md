@@ -8,7 +8,12 @@
 
 #### **Comprehensive Technical Test for Successful Implementation**
 
-_This section serves as a detailed checklist. The AI agent's implementation of this phase is considered successful only when all the following criteria are met._
+_Note on Data Fetching Pattern:_  
+**Hybrid Approach Update:**
+
+- For all session/user-specific data, Server Components must fetch data by calling shared service/data functions directly (not via internal API fetch).
+- API routes exist for client-driven fetches (e.g., TanStack Query, client-side refetch, widgets) and must use the same shared service/data functions.
+- This ensures a single source of truth, maximum performance, and security.
 
 - **Sales (POS) Screen:**
   - [ ] **Layout:** The `/sales` page must render the dedicated two-column `POSLayout`. This layout must be full-screen and responsive, transforming into a usable single-column or tabbed view on mobile.
@@ -56,11 +61,11 @@ _This section serves as a detailed checklist. The AI agent's implementation of t
 
 #### **Part 2: The Sales (POS) Screen**
 
-- **Task 2.1 (API Endpoint):** Create the API route `src/app/api/sales/route.js`. Implement the `POST` handler for finalizing a sale. This is a complex service logic task that must:
-  - Be wrapped in a `prisma.$transaction`.
-  - Create the `Sale` and `SaleItem` records.
-  - Decrement the `stock` for each `Product` sold.
-  - If it's an "On Account" sale, update the `outstanding_balance` on the related `Customer`.
+- **Task 2.1 (API Endpoint):**  
+  Create the API route `src/app/api/sales/route.js`.  
+  _**Hybrid Approach Update:**_  
+  The API handler must call a shared service/data function for all business logic. Server Components must call this function directly for SSR.
+
 - **Task 2.2 (Page Creation):** Create the main sales page at `src/app/(dashboard)/sales/page.jsx`. This will be a client component, as the entire screen is a single, stateful application.
 - **Task 2.3 (Layout):** Implement the dedicated, responsive two-column `POSLayout`.
 - **Task 2.4 (Transaction State):** Use `useState` or `useReducer` within the sales page component to manage the state of the current in-progress transaction (the list of line items, customer info, etc.).
@@ -89,7 +94,11 @@ _This section serves as a detailed checklist. The AI agent's implementation of t
 
 #### **Part 4: The "Receive Stock" Page**
 
-- **Task 4.1 (API Endpoint):** Create an API route for receiving stock (e.g., `src/app/api/purchases/route.js`). The `POST` handler, similar to the sales endpoint, must be a transaction that creates `Purchase` records and increments product stock.
+- **Task 4.1 (API Endpoint):**  
+  Create an API route for receiving stock (e.g., `src/app/api/purchases/route.js`).  
+  _**Hybrid Approach Update:**_  
+  The API handler must call a shared service/data function for all business logic. Server Components must call this function directly for SSR.
+
 - **Task 4.2 (Page Creation):** Create the page at `src/app/(dashboard)/inventory/receive-stock/page.jsx`.
 - **Task 4.3 (UI Composition):**
   - Reuse the "Cockpit" layout.

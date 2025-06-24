@@ -1,3 +1,6 @@
+<!-- Guide 13: Backend Design System & Service Architecture -->
+<!-- filepath: d:\web development\2025\codevision works\inventory-management-app\inventory-nextjs-copilot-pro-chat-mode-4\instructions\Technical-Guides\guide-13-backend-design-system-guide.md -->
+
 ### **Guide 13: Backend Design System & Service Architecture**
 
 **Version:** 1.0
@@ -52,6 +55,23 @@ Every backend feature that involves data processing or database interaction **mu
     2.  Use Prisma best practices: `select` for minimizing data, pagination (`take`/`skip`), and appropriate filtering (`where`).
   - **It MUST NOT:**
     1.  Contain complex, multi-step business logic.
+
+**Shared Service Function Pattern (Update):**
+
+- **Pattern:**
+
+  - All core business/data logic must be implemented as reusable functions in the service/data layer.
+  - These functions are called directly by Server Components for SSR and by API routes for client-driven requests.
+  - This ensures a single source of truth and maximizes performance and security.
+
+- **Consumers:**
+
+  - **Server Components:** Call the shared function directly (no HTTP fetch).
+  - **API Routes:** Call the shared function and expose it securely to the client.
+
+- **Result:**
+  - No duplication of logic.
+  - Both server and client paths are secure and efficient.
 
 **3. The "Service Component" Catalog (Our Reusable Logic)**
 
@@ -111,7 +131,8 @@ This reinforces the structure defined in the main architecture document.
 
 **6. AI Agent's Responsibility**
 
-- **Default to the Three-Layer Pattern:** For any new backend feature, the AI must implement it using the API -> Service -> Data structure.
+- **Default to the Three-Layer Pattern and Shared Service Function:**
+  - For any logic needed by both server and client, implement it once in the service/data layer and reuse it in both places.
 - **Never Bypass a Layer:** The AI is forbidden from placing Prisma queries in API routes or complex business logic in data access functions.
 - **Compose Reusable Logic:** The AI must reuse the standard "service components" for auth, validation, and error handling in every API endpoint.
 - **Generate Clear Contracts:** All functions in the Service and Data layers must have complete JSDoc annotations, defining their parameters and return values, to serve as the clear "API contract" for the layer above.

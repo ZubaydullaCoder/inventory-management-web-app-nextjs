@@ -8,7 +8,12 @@
 
 #### **Comprehensive Technical Test for Successful Implementation**
 
-_This section serves as a detailed checklist. The AI agent's implementation of this phase is considered successful only when all the following criteria are met._
+_Note on Data Fetching Pattern:_  
+**Hybrid Approach Update:**
+
+- For all session/user-specific data, Server Components must fetch data by calling shared service/data functions directly (not via internal API fetch).
+- API routes exist for client-driven fetches (e.g., TanStack Query, client-side refetch, widgets) and must use the same shared service/data functions.
+- This ensures a single source of truth, maximum performance, and security.
 
 - **Main Dashboard ("Mission Control"):**
   - [ ] **Layout & Data:** The `/dashboard` page, when viewed by a user with existing data, must display the responsive grid layout.
@@ -40,17 +45,22 @@ _This section serves as a detailed checklist. The AI agent's implementation of t
 
 - **Task 1.1 (Shadcn UI Components):** In the terminal, add the following `shadcn/ui` components required for this phase: `date-picker`, `tabs`, `alert`, and `progress`.
 - **Task 1.2 (Charting Library):** Install a simple, modern charting library suitable for React (e.g., `recharts`).
-- **Task 1.3 (Backend Logic - Aggregation):**
-  - Create a new file in the service layer (e.g., `src/lib/services/reporting-service.js`).
-  - Implement complex Prisma aggregation queries within this service. Create functions to calculate total sales revenue, total COGS (Cost of Goods Sold), profit, and other KPIs within a given date range. These functions will be the backbone of the dashboard and reports.
-- **Task 1.4 (API Endpoints):**
-  - Create a new API route, `/api/dashboard-stats`, that accepts a date range and returns the aggregated data for the KPI `StatCard`s.
-  - Create API routes for fetching the data needed for each widget (e.g., `/api/products/low-stock`, `/api/products/incomplete`).
+- **Task 1.3 (Backend Logic - Aggregation):**  
+  Implement complex Prisma aggregation queries within a shared service/data function.  
+  _**Hybrid Approach Update:**_  
+  Server Components must call these functions directly for SSR; API routes must call the same functions for client-driven fetches.
+
+- **Task 1.4 (API Endpoints):**  
+  API routes must call the shared service/data functions for all business logic.
 
 #### **Part 2: The Main Dashboard ("Mission Control")**
 
 - **Task 2.1 (Page Update):** Modify the main dashboard page at `src/app/(dashboard)/dashboard/page.jsx`.
-- **Task 2.2 (Data Fetching):** This Server Component will now fetch the initial data for the default date range using the new aggregation endpoints.
+- **Task 2.2 (Data Fetching):**  
+  This Server Component will now fetch the initial data for the default date range using the new aggregation endpoints.  
+  _**Hybrid Approach Update:**_  
+  Fetch this data by calling the shared service/data function directly, not by fetching your own API route.
+
 - **Task 2.3 (Client-Side State):** The page will need to be a Client Component (or have a Client Component wrapper) to manage the state of the selected date range from the `DateRangePicker`.
 - **Task 2.4 (KPI Row):** Create the `src/components/features/dashboard/stat-card.jsx` component. On the dashboard page, map over the fetched KPI data and render a `StatCard` for each metric.
 - **Task 2.5 (Widgets):**

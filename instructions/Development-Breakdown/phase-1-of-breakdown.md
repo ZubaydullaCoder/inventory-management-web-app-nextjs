@@ -8,7 +8,12 @@
 
 #### **Comprehensive Technical Test for Successful Implementation**
 
-_This section serves as a detailed checklist. The AI agent's implementation of this phase is considered successful only when all the following criteria are met._
+_Note on Data Fetching Pattern:_  
+**Hybrid Approach Update:**
+
+- For all session/user-specific data, Server Components must fetch data by calling shared service/data functions directly (not via internal API fetch).
+- API routes exist for client-driven fetches (e.g., TanStack Query, client-side refetch, widgets) and must use the same shared service/data functions.
+- This ensures a single source of truth, maximum performance, and security.
 
 - **Authenticated Layout & Onboarding:**
   - [ ] **Layout:** Upon logging in and landing at `/dashboard`, the main authenticated `AppLayout` must be displayed, consisting of a persistent `Sidebar` (left) and a `TopBar` (top).
@@ -59,7 +64,11 @@ _This section serves as a detailed checklist. The AI agent's implementation of t
 #### **Part 2: The Dashboard Onboarding Experience**
 
 - **Task 2.1 (Page Creation):** Create the main dashboard page at `src/app/(dashboard)/dashboard/page.jsx`.
-- **Task 2.2 (Data Fetching):** This Server Component should fetch counts of the user's products, categories, etc., to determine if the onboarding guide should be shown.
+- **Task 2.2 (Data Fetching):**  
+  This Server Component should fetch counts of the user's products, categories, etc., to determine if the onboarding guide should be shown.  
+  _**Hybrid Approach Update:**_  
+  Fetch these counts by calling a shared service/data function directly, not by fetching your own API route.
+
 - **Task 2.3 (Onboarding UI):** Create the `src/components/features/dashboard/onboarding-guide.jsx` component. This component will display the step-by-step checklist and contain `<Link>` components pointing to the "Cockpit" pages.
 - **Task 2.4 (Conditional Rendering):** In the dashboard page, conditionally render the `OnboardingGuide` if the user has no data; otherwise, prepare to render the main dashboard widgets (to be built in a later phase).
 
@@ -85,10 +94,14 @@ _This workflow will be implemented for Products first, then the pattern will be 
 - **Task 4.2 (Column Definition):** Create `src/components/features/products/product-columns.jsx`. Define the columns for the products table, including an "Actions" column that renders a `DropdownMenu` with an "Edit" item.
 - **Task 4.3 (API Endpoint):** In `src/app/api/products/route.js`, implement the `GET` handler for fetching a paginated list of products. In a new `[id]/route.js` file, implement `GET` (for one product) and `PUT` (for updates).
 - **Task 4.4 (Page Creation):** Create the main product list page at `src/app/(dashboard)/dashboard/inventory/products/page.jsx`.
-- **Task 4.5 (Data Fetching & Display):**
-  - This Server Component will use the Hybrid `fetch` pattern to get the initial list of products.
+- **Task 4.5 (Data Fetching & Display):**  
+  This Server Component will use the Hybrid SSR pattern:  
+  _**Hybrid Approach Update:**_  
+  For session-specific data, fetch directly from the shared service/data function. Use the API route only for client-driven fetches (e.g., TanStack Query, client-side refetch).
+
   - It will pass the data and columns to the `DataTable` component.
   - It will handle the case where no products exist by showing the `EmptyState` component.
+
 - **Task 4.6 (Modal Editing Setup):**
   - Implement the intercepting route structure for editing: `src/app/(dashboard)/dashboard/products/@modal/(..)products/[id]/edit/`.
   - Create the redirect fallback page at `src/app/(dashboard)/dashboard/products/[id]/edit/page.jsx`.
