@@ -1,4 +1,4 @@
-// /src/app/(dashboard)/layout.jsx
+// /src/app/(dashboard)/dashboard/layout.jsx
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Sidebar from "@/components/layouts/sidebar";

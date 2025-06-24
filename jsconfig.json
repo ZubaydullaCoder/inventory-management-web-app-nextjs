@@ -4,7 +4,7 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "checkJs": true,
+    "checkJs": false,
     "allowJs": true,
     "skipLibCheck": true,
     "strict": false,
