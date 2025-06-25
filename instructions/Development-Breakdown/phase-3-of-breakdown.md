@@ -31,11 +31,11 @@ _Note on Data Fetching Pattern:_
 - **Accounts Management (Receivable & Payable):**
   - [ ] **Page Content:** The `/customers/receivables` and `/purchases/payables` pages must each display a `DataTable` listing only the customers or suppliers with a non-zero balance.
   - [ ] **Record Payment:** The "Record Payment" action in the `DataTable` must open a modal pre-filled with the customer/supplier's name and their full outstanding balance.
-  - [ ] **Update Logic:** Submitting the "Record Payment" modal must trigger a `POST` request to a new API endpoint. On success, the customer/supplier's balance must be correctly decreased in the database, and the `DataTable` on the page must refresh to reflect the change (potentially removing the entry if the balance becomes zero).
+  - [ ] **Update Logic:** Submitting the "Record Payment" modal must trigger a `POST` request to a new API endpoint. On success, the customer/supplier's balance must be correctly decreased in the database, and the `DataTable` on the page must optimistically update to reflect the change (potentially removing the entry if the balance becomes zero).
 - **Subscription Management Page:**
   - [ ] **UI Display:** A page under a `/settings` route must display the three subscription plan `PricingCard`s.
   - [ ] **State Indication:** The user's current plan must be clearly highlighted. An `Alert` component should display their current status (e.g., "You are on the Standard Plan").
-  - [ ] **Simulated Flow:** Clicking to "upgrade" or "downgrade" a plan must trigger a confirmation modal and, upon confirmation, update the user's `Subscription` record in the database. No real payment should be processed.
+  - [ ] **Simulated Flow:** Clicking to "upgrade" or "downgrade" a plan must trigger a confirmation modal and, upon confirmation, update the user's `Subscription` record in the database. The UI must optimistically update to show the new plan status immediately.
 
 ---
 
@@ -87,7 +87,7 @@ _Note on Data Fetching Pattern:_
 - **Task 4.4 (Record Payment Modal):**
   - Implement the "Record Payment" action using an intercepting route modal.
   - The modal will contain a simple form with a pre-filled amount.
-  - The form submission will use a `useMutation` hook to call the payments API endpoint. On success, it must invalidate the relevant query to refresh the `DataTable`.
+  - The form submission will use a `useMutation` hook to call the payments API endpoint. It must use an optimistic update to instantly modify the balance in the `DataTable` and then invalidate the query on settlement.
 
 #### **Part 5: Subscription Management**
 
@@ -97,4 +97,4 @@ _Note on Data Fetching Pattern:_
   - Use the `PricingCard` components created in Phase 0 to display the available plans.
   - Use an `Alert` component to show the user's current subscription status and limits.
   - The "Upgrade/Downgrade" buttons will trigger a confirmation modal.
-- **Task 5.4 (Logic):** The confirmation modal's action will use a `useMutation` hook to call the `PUT /api/subscription` endpoint and update the user's plan.
+- **Task 5.4 (Logic):** The confirmation modal's action will use a `useMutation` hook to call the `PUT /api/subscription` endpoint. The mutation must optimistically update the UI to immediately reflect the new subscription status.

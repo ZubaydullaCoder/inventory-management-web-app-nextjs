@@ -6,42 +6,46 @@ import DataTable from "@/components/ui/data-table";
 import EmptyState from "@/components/ui/empty-state";
 import { createProductColumns } from "@/components/features/products/product-columns";
 import { Package } from "lucide-react";
+import { queryKeys } from "@/lib/queryKeys";
 
 /**
  * Fetches the list of products from the API.
- * @returns {Promise<Array<Object>>}
+ * @returns {Promise<Object>} The full paginated data object
  */
 async function fetchProducts() {
-  const response = await fetch("/api/products");
+  // Match the server-side fetch limit to ensure consistency on refetch
+  const response = await fetch("/api/products?limit=100");
   if (!response.ok) {
     throw new Error("Failed to fetch products");
   }
   const data = await response.json();
-  // The API returns a paginated structure, we need the products array
-  return data.data.products;
+  // Return the entire paginated data object
+  return data.data;
 }
 
 /**
  * Client component to render the products data table.
  * It uses TanStack Query to manage and update the product list.
- * @param {{ initialProducts: Array<Object> }} props
+ * @param {{ initialProductsData: Object }} props
  * @returns {JSX.Element}
  */
-export default function ProductDataTable({ initialProducts }) {
+export default function ProductDataTable({ initialProductsData }) {
   const {
-    data: products,
+    data: productsData,
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["products"],
+    queryKey: queryKeys.list("products"),
     queryFn: fetchProducts,
-    initialData: initialProducts,
+    initialData: initialProductsData,
     staleTime: 1000 * 60 * 5, // Keep initial data fresh for 5 mins
   });
 
+  // Extract the products array for the table, defaulting to an empty array
+  const products = productsData?.products || [];
   const columns = createProductColumns();
 
-  if (isLoading && !initialProducts) {
+  if (isLoading && !initialProductsData) {
     return <div>Loading table...</div>;
   }
 

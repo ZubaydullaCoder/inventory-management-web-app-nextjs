@@ -20,6 +20,8 @@ The AI agent must treat these patterns as the mandatory "source of truth" for al
 - **Explicit Contracts:** The inputs and outputs of every function are clearly defined with JSDoc.
 - **Thin API Layer, Thick Logic Layer:** API routes are just the "front door." The core business logic is encapsulated in deeper, reusable service and data modules.
 
+- **Optimistic Update Support:** The backend must support frontend optimistic update patterns by returning the full, updated resource after any mutation (create, update, delete). This enables the frontend to reconcile the cache and maintain UI consistency.
+
 **2. The Standard Service Pattern: Three-Layer Architecture**
 
 Every backend feature that involves data processing or database interaction **must** be implemented using this three-layer pattern. This is the foundational structure of our backend.
@@ -34,6 +36,7 @@ Every backend feature that involves data processing or database interaction **mu
     4.  Call a function from the Service or Data Layer, passing in simple, validated data.
     5.  Catch any errors from the layers below and return a standardized JSON error response.
     6.  Format the successful response and send it back to the client using `NextResponse.json()`.
+        - For mutations, always return the full, updated resource object so the frontend can reconcile optimistic updates.
   - **It MUST NOT:**
     1.  Contain any direct Prisma calls.
     2.  Contain any complex business logic.
@@ -72,6 +75,7 @@ Every backend feature that involves data processing or database interaction **mu
 - **Result:**
   - No duplication of logic.
   - Both server and client paths are secure and efficient.
+  - **Optimistic Update Ready:** API endpoints must always return the updated resource so the client can reconcile optimistic updates in TanStack Query.
 
 **3. The "Service Component" Catalog (Our Reusable Logic)**
 

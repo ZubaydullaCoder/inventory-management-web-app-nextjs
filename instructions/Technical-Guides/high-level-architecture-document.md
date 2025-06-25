@@ -14,6 +14,7 @@ The core philosophy is a **Hybrid, Server-First approach** using the **Next.js A
 - **Framework:** Next.js (App Router) with JavaScript + JSDoc for type safety.
 - **Data Fetching:** A hybrid model where Server Components handle initial data loads via internal `fetch` calls (leveraging the Next.js Data Cache), and TanStack Query manages all client-side state and mutations.
 - **UI Rendering & State:** A Suspense-based model where Server Components orchestrate the layout and wrap data-dependent Client Components in `<Suspense>` boundaries. Modals for specific resources (e.g., editing an item) **must** be implemented using **Parallel and Intercepting Routes**.
+- **Optimistic Updates:** All client-side mutations that affect lists or tables (e.g., product CRUD, sales, stock) **must** implement optimistic updates using TanStack Query, so the UI reflects changes instantly.
 - **Database:** NeonDB (PostgreSQL) accessed exclusively via the Prisma ORM.
 - **Authentication:** Auth.js (NextAuth.v5) with a Google-only, JWT-based session strategy.
 - **Data Tables:** All tabular data **must** be rendered using a reusable `DataTable` component powered by **Tanstack Table v8**.
@@ -148,6 +149,7 @@ This list remains unchanged.
   1.  **Hybrid Fetching:** All initial page data loads must use the Server Component `fetch` -> API Route -> Prisma pattern.
   2.  **Suspense for Loading:** All data-dependent Client Components must be wrapped in `<Suspense>` with a fallback.
   3.  **Intercepting Routes for Modals:** All resource-specific modals (edit, view details) must use the Parallel/Intercepting Route pattern with the redirect-on-reload fallback.
+- **Optimistic Updates:** All CRUD operations that affect lists or tables must use optimistic updates for instant UI feedback, following the TanStack Query guide.
 - **Use Tanstack Table:** All tabular data must be implemented using our reusable `DataTable` component powered by Tanstack Table v8.
 - **Isolate Logic:** Strictly maintain the separation between API routes, service functions, and data access functions as defined in the Backend Design System.
 - **Security is Paramount:** Implement "Defense in Depth" by checking authorization at all required layers.

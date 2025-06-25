@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { queryKeys } from "@/lib/queryKeys";
 
 /**
  * Product edit form validation schema
@@ -100,7 +101,7 @@ export default function EditProductModal({ params }) {
 
   // Fetch product data
   const { data: product, isLoading } = useQuery({
-    queryKey: ["product", productId],
+    queryKey: queryKeys.detail("products", productId),
     queryFn: () => fetchProduct(productId),
   });
 
@@ -128,25 +129,71 @@ export default function EditProductModal({ params }) {
     }
   }, [product, reset]);
 
-  // Update mutation
+  // Update mutation with optimistic updates
   const updateMutation = useMutation({
     mutationFn: (data) => updateProduct(productId, data),
-    onSuccess: (updatedProductResponse) => {
-      toast.success("Product updated successfully!");
+    onMutate: async (newData) => {
+      // 1. Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: queryKeys.list("products") });
 
-      // Invalidate the list query to trigger a refetch in the data table
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-
-      // Also, optimistically update the specific product's query cache
-      queryClient.setQueryData(
-        ["product", productId],
-        updatedProductResponse.data
+      // 2. Snapshot the previous paginated data object
+      const previousProductsData = queryClient.getQueryData(
+        queryKeys.list("products")
       );
 
-      handleClose();
+      // 3. Optimistically update the products array within the object
+      queryClient.setQueryData(queryKeys.list("products"), (oldData) => {
+        if (!oldData || !oldData.products) {
+          return oldData; // Return as-is if data is not in the expected shape
+        }
+
+        const updatedProducts = oldData.products.map((p) =>
+          p.id === productId
+            ? {
+                ...p,
+                ...newData,
+                sellingPrice: parseFloat(newData.sellingPrice),
+                purchasePrice: newData.purchasePrice
+                  ? parseFloat(newData.purchasePrice)
+                  : p.purchasePrice,
+                stock: newData.stock ? parseInt(newData.stock) : p.stock,
+                reorderPoint: newData.reorderPoint
+                  ? parseInt(newData.reorderPoint)
+                  : p.reorderPoint,
+              }
+            : p
+        );
+
+        // Return the new object with the updated products array
+        return {
+          ...oldData,
+          products: updatedProducts,
+        };
+      });
+
+      // 4. Return a context object with the snapshotted value
+      return { previousProductsData };
     },
-    onError: (error) => {
-      toast.error(error.message || "Failed to update product");
+    onError: (err, newData, context) => {
+      // 5. Rollback on error
+      toast.error("Failed to update product. Restoring previous state.");
+      if (context?.previousProductsData) {
+        queryClient.setQueryData(
+          queryKeys.list("products"),
+          context.previousProductsData
+        );
+      }
+    },
+    onSettled: () => {
+      // 6. Invalidate and refetch to ensure eventual consistency
+      queryClient.invalidateQueries({ queryKey: queryKeys.list("products") });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.detail("products", productId),
+      });
+    },
+    onSuccess: () => {
+      toast.success("Product updated successfully!");
+      handleClose();
     },
   });
 

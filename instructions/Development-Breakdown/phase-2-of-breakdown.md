@@ -71,7 +71,7 @@ _Note on Data Fetching Pattern:_
 - **Task 2.4 (Transaction State):** Use `useState` or `useReducer` within the sales page component to manage the state of the current in-progress transaction (the list of line items, customer info, etc.).
 - **Task 2.5 (Action Zone - Left Column):**
   - Integrate the `ProductSearchInput` component.
-  - Implement the `IconButton` for "On-the-Fly Product" creation, which will open a modal.
+  - Implement the `IconButton` for "On-the-Fly Product" creation, which will open a modal. The creation logic must use an optimistic update to make the new product immediately available for searching.
 - **Task 2.6 (Status Zone - Right Column):**
   - Create the `src/components/features/sales/transaction-line-item.jsx` component. This component must contain the editable inputs for `Selling Price` and `Quantity`.
   - Implement the logic where changing one input (`Quantity` or `Total Line Price`) recalculates the other.
@@ -105,4 +105,4 @@ _Note on Data Fetching Pattern:_
   - In the left column, use the `CreatableSelect` for suppliers and the `ProductSearchInput` for adding products to the receiving session.
   - The "+" button for on-the-fly product creation must open a modal containing the **full product creation form**.
   - The right column will show a summary and the finalization buttons ("Paid in Full" or "On Credit").
-- **Task 4.4 (Logic):** Implement the client-side state management and mutation hooks required to track the receiving session and call the backend API upon finalization.
+- **Task 4.4 (Logic):** Implement the client-side state management and mutation hooks required to track the receiving session and call the backend API upon finalization. All additions to the session list must use optimistic updates for an instantaneous UI response.

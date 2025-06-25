@@ -24,8 +24,6 @@ export default async function ProductsPage() {
     limit: 100, // Get all products for now, pagination can be added later
   });
 
-  const { products } = productsData;
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -34,7 +32,7 @@ export default async function ProductsPage() {
         actionLabel="Add New Product"
         actionHref="/dashboard/inventory/products/new"
       />
-      <ProductDataTable initialProducts={products} />
+      <ProductDataTable initialProductsData={productsData} />
     </div>
   );
 }
