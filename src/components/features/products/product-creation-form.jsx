@@ -1,16 +1,16 @@
 // /src/components/features/products/product-creation-form.jsx
 "use client";
 
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { queryKeys } from "@/lib/queryKeys";
 
 /**
  * Product form validation schema
@@ -77,13 +77,15 @@ async function createProduct(formData) {
 }
 
 /**
- * Product creation form component
+ * Product creation form component with optimistic updates
  * Handles form submission and validation for creating new products
  * @param {Object} props - Component props
- * @param {Function} props.onProductCreated - Callback when product is successfully created
+ * @param {Function} [props.onProductCreated] - Optional callback when product is successfully created
  * @returns {JSX.Element} Product creation form
  */
 export default function ProductCreationForm({ onProductCreated }) {
+  const queryClient = useQueryClient();
+
   const {
     register,
     handleSubmit,
@@ -102,22 +104,96 @@ export default function ProductCreationForm({ onProductCreated }) {
     },
   });
 
-  // Mutation for creating products
+  // Mutation with optimistic updates following Guide 2 pattern
   const createProductMutation = useMutation({
     mutationFn: createProduct,
-    onSuccess: (response) => {
-      toast.success("Product created successfully!");
-      reset(); // Clear form
-      onProductCreated(response.data); // Update parent state
+    onMutate: async (newProductData) => {
+      // 1. Cancel ongoing queries to prevent overwriting optimistic update
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.session("products"),
+      });
+      await queryClient.cancelQueries({ queryKey: queryKeys.list("products") });
 
-      // Focus first input for quick continuation
-      setTimeout(() => {
-        const firstInput = document.querySelector('input[name="name"]');
-        if (firstInput) firstInput.focus();
-      }, 100);
+      // 2. Snapshot the previous session data
+      const previousSessionProducts = queryClient.getQueryData(
+        queryKeys.session("products")
+      );
+
+      // 3. Create optimistic product with temporary data (store timestamp for identification)
+      const optimisticTimestamp = Date.now();
+      const optimisticProduct = {
+        id: `optimistic-${optimisticTimestamp}`, // Temporary ID with timestamp
+        name: newProductData.name,
+        description: newProductData.description || "",
+        sku: newProductData.sku || "",
+        sellingPrice: parseFloat(newProductData.sellingPrice),
+        purchasePrice: newProductData.purchasePrice
+          ? parseFloat(newProductData.purchasePrice)
+          : null,
+        stock: newProductData.stock ? parseInt(newProductData.stock) : 0,
+        reorderPoint: newProductData.reorderPoint
+          ? parseInt(newProductData.reorderPoint)
+          : 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        category: null,
+        supplier: null,
+        _count: {
+          /* default structure */
+        },
+        // Store timestamp for later identification
+        _optimisticTimestamp: optimisticTimestamp,
+      };
+
+      // 4. Optimistically update the session cache
+      queryClient.setQueryData(queryKeys.session("products"), (old) => {
+        const currentProducts = old || [];
+        return [optimisticProduct, ...currentProducts];
+      });
+
+      // 5. Return context with snapshot and timestamp for potential rollback
+      return { previousSessionProducts, optimisticTimestamp };
     },
-    onError: (error) => {
-      toast.error(error.message || "Failed to create product");
+    onError: (error, newProductData, context) => {
+      // 6. Rollback on error
+      toast.error(`Failed to create product: ${error.message}`);
+      if (context?.previousSessionProducts !== undefined) {
+        queryClient.setQueryData(
+          queryKeys.session("products"),
+          context.previousSessionProducts
+        );
+      }
+    },
+    onSettled: () => {
+      // 7. Invalidate the main products list to ensure eventual consistency
+      //    DO NOT invalidate the session list, as it's client-managed.
+      queryClient.invalidateQueries({ queryKey: queryKeys.list("products") });
+    },
+    onSuccess: (response, formData, context) => {
+      // 8. Handle success
+      toast.success("Product created successfully!");
+
+      // Replace ONLY the specific optimistic product with real server data
+      queryClient.setQueryData(queryKeys.session("products"), (old) => {
+        const currentProducts = old || [];
+
+        // Find and replace the specific optimistic product by timestamp
+        const updatedProducts = currentProducts.map((product) => {
+          // Check if this is the optimistic product we just created
+          if (product._optimisticTimestamp === context.optimisticTimestamp) {
+            // Replace with real server data (use response.data directly)
+            return response.data;
+          }
+          return product;
+        });
+
+        return updatedProducts;
+      });
+
+      // Call optional callback
+      if (onProductCreated) {
+        onProductCreated(response.data);
+      }
     },
   });
 
@@ -127,6 +203,13 @@ export default function ProductCreationForm({ onProductCreated }) {
    */
   const onSubmit = (data) => {
     createProductMutation.mutate(data);
+
+    // Clear form and focus first input immediately for quick continuation
+    reset();
+    setTimeout(() => {
+      const firstInput = document.querySelector('input[name="name"]');
+      if (firstInput) firstInput.focus();
+    }, 100);
   };
 
   return (

@@ -1,6 +1,6 @@
 **Guide Document 2: TanStack Query & Server State Management in Next.js: Best Practices (JavaScript + JSDoc Edition)**
 
-**Version:** 1.1
+**Version:** 1.2
 **Date:** June 3, 2025
 **Target Audience:** AI Development Agent
 **Project:** Retail Inventory & Finance Manager
@@ -110,180 +110,156 @@ This document outlines best practices for using TanStack Query (v5) for server s
 
 **4. Query Keys**
 
-- **Structure:** Use an array for query keys. Create helper functions for consistency.
-- **AI Action:** The AI must use these structured keys.
+- **Centralized Management:** To prevent inconsistencies, all query keys must be managed in a central file.
 - File: `src/lib/queryKeys.js`
-  ```javascript
-  // src/lib/queryKeys.js
-  export const productKeys = {
-    all: ["products"],
-    lists: () => [...productKeys.all, "list"],
-    /** @param {object} filters - The filters for the product list. */
-    list: (filters) => [...productKeys.lists(), filters],
-    details: () => [...productKeys.all, "detail"],
-    /** @param {string} id - The ID of the product. */
-    detail: (id) => [...productKeys.details(), id],
-  };
-  ```
 
-**5. Fetching Data with `useQuery`**
+```javascript
+// src/lib/queryKeys.js
 
-- **Usage:** For read operations in Client Components.
+/**
+ * @typedef {'products' | 'categories' | 'suppliers' | 'customers'} QueryKeyResource
+ */
 
-  ```javascript
-  // In a Client Component
-  "use client";
-  import { useQuery } from "@tanstack/react-query";
-  import { productKeys } from "@/lib/queryKeys";
-
+export const queryKeys = {
   /**
-   * Fetches products from the API.
-   * @param {{ category?: string }} filters
-   * @returns {Promise<import('@/lib/types.js').Product[]>}
+   * @param {QueryKeyResource} resource
+   * @param {Record<string, any>} [params]
    */
-  async function fetchProducts(filters) {
-    const params = new URLSearchParams();
-    if (filters.category) params.append("category", filters.category);
-    const response = await fetch(`/api/products?${params.toString()}`);
-    if (!response.ok) throw new Error("Network response was not ok");
-    return response.json();
-  }
-
+  list: (resource, params) => [resource, "list", params].filter(Boolean),
   /**
-   * @param {{ initialCategory?: string }} props
-   */
-  function ProductList({ initialCategory }) {
-    const [category, setCategory] = useState(initialCategory);
-    const queryKey = productKeys.list({ category });
-
-    const {
-      data: products,
-      error,
-      isLoading,
-    } = useQuery({
-      queryKey: queryKey,
-      queryFn: () => fetchProducts({ category }),
-    });
-
-    if (isLoading) return <p>Loading products...</p>;
-    if (error) return <p>Error: {error.message}</p>;
-
-    // ... render products
-  }
-  ```
-
-**6. Modifying Data with `useMutation`**
-
-- **Usage:** For create, update, or delete (CUD) operations.
-
-  ```javascript
-  // In a Client Component
-  "use client";
-  import { useMutation, useQueryClient } from "@tanstack/react-query";
-  import { productKeys } from "@/lib/queryKeys";
-
-  /**
-   * Creates a new product via the API.
-   * @param {import('@/lib/types.js').ProductCreateInput} newProductData
-   * @returns {Promise<import('@/lib/types.js').Product>}
-   */
-  async function createProduct(newProductData) {
-    const response = await fetch("/api/products", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newProductData),
-    });
-    if (!response.ok) throw new Error("Failed to create product");
-    return response.json();
-  }
-
-  function AddProductForm() {
-    const queryClient = useQueryClient();
-
-    const mutation = useMutation({
-      mutationFn: createProduct,
-      onSuccess: (newProduct) => {
-        // Invalidate and refetch the list of products
-        queryClient.invalidateQueries({ queryKey: productKeys.lists() });
-        console.log("Product created:", newProduct);
-      },
-      onError: (error) => {
-        console.error("Failed to create product:", error.message);
-      },
-    });
-
-    /** @param {import('@/lib/types.js').ProductCreateInput} formData */
-    const handleSubmit = (formData) => {
-      mutation.mutate(formData);
-    };
-
-    // ... render form
-  }
-  ```
-
-**7. Cache Invalidation and Refetching**
-
-- Use `queryClient.invalidateQueries({ queryKey: ... })` in the `onSuccess` callback of mutations to mark relevant queries as stale and trigger refetches.
-
-**8. Integration with Next.js App Router (Server & Client Components)**
-
-- **Primary Data Fetching in Server Components:** Fetch critical data for the initial page load directly in Server Components.
-- **Hydrating Client Components with Initial Data:** Pass data fetched on the server as props to Client Components and use the `initialData` option of `useQuery`.
-
-  ```javascript
-  // src/app/products/[productId]/page.jsx (Server Component)
-  import { getProduct } from '@/lib/data/products'; // Assume this fetches from DB
-  import ProductDetailClient from '@/components/features/products/ProductDetailClient';
-
-  /**
-   * @param {{ params: { productId: string } }} props
-   */
-  export default async function ProductPage({ params }) {
-    const product = await getProduct(params.productId);
-    return <ProductDetailClient initialProductData={product} />;
-  }
-
-  // src/components/features/products/ProductDetailClient.jsx (Client Component)
-  'use client';
-  import { useQuery } from '@tanstack/react-query';
-  import { productKeys } from '@/lib/queryKeys';
-
-  /**
-   * Fetches a single product by its ID from the API.
+   * @param {QueryKeyResource} resource
    * @param {string} id
-   * @returns {Promise<import('@/lib/types.js').Product>}
    */
-  async function fetchProductById(id) {
-    const res = await fetch(`/api/products/${id}`);
-    if (!res.ok) throw new Error('Failed to fetch product');
-    return res.json();
-  }
+  detail: (resource, id) => [resource, "detail", id],
+};
+```
 
-  /**
-   * @param {{ initialProductData: import('@/lib/types.js').Product }} props
-   */
-  export default function ProductDetailClient({ initialProductData }) {
-    const { data: product } = useQuery({
-      queryKey: productKeys.detail(initialProductData.id),
-      queryFn: () => fetchProductById(initialProductData.id),
-      initialData: initialProductData,
-      staleTime: 1000 * 60 * 5, // Keep initial data fresh for 5 mins
-    });
+**5. Fetching Data (`useQuery`)**
 
-    // ... render product details using the 'product' object
-  }
-  ```
+- **Service Layer:** All data-fetching logic must be encapsulated within service functions (e.g., `product-service.js`). Components should not call `fetch` directly.
+- **`useQuery` Hook:** Use the `useQuery` hook to fetch and cache data.
+
+```javascript
+// Example in a component
+import { useQuery } from "@tanstack/react-query";
+import { getProducts } from "@/lib/services/product-service";
+import { queryKeys } from "@/lib/queryKeys";
+
+function ProductList() {
+  const { data, isLoading, error } = useQuery({
+    queryKey: queryKeys.list("products", { page: 1, limit: 10 }),
+    queryFn: () => getProducts({ page: 1, limit: 10 }),
+  });
+  // ...
+}
+```
+
+**6. Mutating Data (`useMutation`) & Optimistic Updates**
+
+- **Service Layer:** As with queries, all mutation logic (create, update, delete) must be in the service layer.
+- **`useMutation` Hook:** Use the `useMutation` hook for data modification.
+- **Optimistic Updates:** For a responsive UI, all mutations that modify a list of data (create, update, delete) **must** implement optimistic updates. This provides instant feedback to the user by updating the UI _before_ the server confirms the change.
+
+**Standard Optimistic Update Pattern:**
+
+The following pattern must be used for all mutations. It involves three key steps inside the `useMutation` hook:
+
+1.  **`onMutate`:**
+    - Cancel any ongoing queries for the same data to prevent them from overwriting our optimistic change.
+    - Snapshot the current state of the data in the cache. This is our rollback point.
+    - Optimistically update the cache with the new data.
+    - Return the snapshot in a context object.
+2.  **`onError`:**
+    - If the mutation fails, use the context object from `onMutate` to roll the cache back to its previous state.
+3.  **`onSettled`:**
+    - After the mutation succeeds or fails, invalidate the query. This ensures the client-side cache is eventually consistent with the server state.
+
+**Example: Optimistic Create**
+
+```javascript
+// /src/components/features/products/product-creation-form.jsx
+
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/queryKeys";
+import { createProduct } from "@/lib/services/product-service"; // Assume this calls the API
+
+// ...
+
+export default function ProductCreationForm({ onProductCreated }) {
+  const queryClient = useQueryClient();
+
+  const createProductMutation = useMutation({
+    mutationFn: createProduct,
+    onMutate: async (newProductData) => {
+      // 1. Cancel ongoing queries
+      await queryClient.cancelQueries({ queryKey: queryKeys.list("products") });
+
+      // 2. Snapshot the previous data
+      const previousProducts = queryClient.getQueryData(
+        queryKeys.list("products")
+      );
+
+      // 3. Optimistically update the cache
+      queryClient.setQueryData(queryKeys.list("products"), (old) => {
+        // This is a simplified example. For a paginated list,
+        // you might add to the first page or handle it differently.
+        const newProduct = {
+          ...newProductData,
+          id: `optimistic-${Date.now()}`, // Temporary ID
+          _count: {}, // Default structure
+        };
+        return old
+          ? {
+              ...old,
+              pages: [[newProduct, ...old.pages[0]], ...old.pages.slice(1)],
+            }
+          : old;
+      });
+
+      // 4. Return context with snapshot
+      return { previousProducts };
+    },
+    onError: (err, newProduct, context) => {
+      // 5. Rollback on error
+      toast.error("Failed to create product. Restoring previous state.");
+      if (context?.previousProducts) {
+        queryClient.setQueryData(
+          queryKeys.list("products"),
+          context.previousProducts
+        );
+      }
+    },
+    onSettled: () => {
+      // 6. Invalidate and refetch
+      queryClient.invalidateQueries({ queryKey: queryKeys.list("products") });
+    },
+    onSuccess: (data) => {
+      toast.success("Product created successfully!");
+      // The onProductCreated callback might still be useful for form resets etc.
+      onProductCreated(data.data);
+    },
+  });
+
+  // ...
+}
+```
+
+**7. Invalidation and Refetching**
+
+- Use `queryClient.invalidateQueries` to mark data as stale and trigger a refetch. This is the primary mechanism for ensuring data is up-to-date after a mutation.
+- Be specific with invalidation keys to avoid unnecessary refetches.
+
+**8. SSR and Hydration**
+
+- **`initialData`:** On pages that use Server-Side Rendering (SSR), data fetched on the server can be passed as `initialData` to `useQuery`.
+- **Hydration:** While `initialData` is sufficient for this project, be aware of the more advanced `Hydration` pattern for complex scenarios involving prefetching on the server. For our use case, passing `initialData` from a server component to a client component is the standard.
 
 **9. Error Handling**
 
 - Use the `error` object from `useQuery` and the `onError` callback in `useMutation` to handle errors gracefully.
 - Use React Error Boundaries (`error.jsx` in App Router) to catch rendering errors.
 
-**10. Optimistic Updates**
-
-- For a smoother UX, consider optimistic updates using `onMutate` and `onSettled` in `useMutation`. This is an advanced pattern suitable for post-MVP optimization.
-
-**11. Organizing Query Logic (Custom Hooks)**
+**10. Organizing Query Logic (Custom Hooks)**
 
 - Encapsulate `useQuery` and `useMutation` logic into custom hooks for reusability.
 
@@ -317,7 +293,7 @@ This document outlines best practices for using TanStack Query (v5) for server s
   }
   ```
 
-**12. Developer Tools**
+**11. Developer Tools**
 
 - Use `ReactQueryDevtools` during development to inspect the cache and query states. It is already included in the `QueryProvider` example.
 

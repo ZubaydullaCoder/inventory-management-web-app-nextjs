@@ -22,15 +22,19 @@ _Note on Data Fetching Pattern:_
 - **"Cockpit" Pages Functionality:**
   - [ ] **Layout Consistency:** The pages for creating new Categories, Suppliers, Customers, and Products must all use the consistent two-column "Cockpit" layout (`Form` on the left, `SessionCreationList` on the right).
   - [ ] **Form Submission:** Pressing "Enter" or clicking the "Save and Add Another" button in any Cockpit form must:
-    - Trigger a `POST` request to the correct API endpoint.
+    - Trigger a `POST` request to the correct API endpoint using a `useMutation` hook.
+    - **Implement Optimistic Updates:** The mutation must follow the optimistic update pattern defined in `guide-2-tanstack-query-server-state-management-guide.md`. The `SessionCreationList` on the right must update _instantly_ without waiting for the API response.
     - On success, display a `sonner` success notification (e.g., "Product Saved").
-    - Instantly add the newly created item to the top of the `SessionCreationList` on the right.
-    - Clear the form on the left and return focus to its first input field.
+    - On error, display a `sonner` error notification and correctly roll back the UI to its previous state.
+    - After a successful mutation, clear the form on the left and return focus to its first input field.
   - [ ] **API & Database:** The backend must have `POST` API endpoints for creating each data type (Category, Supplier, Customer, Product). Each successful request must create a new record in the corresponding database table, correctly linked to the authenticated user's account.
 - **Mid-Flow Correction (Modal Editing):**
   - [ ] **Trigger:** Clicking the "Edit" icon next to an item in the `SessionCreationList` must open an intercepting route modal.
   - [ ] **Data Pre-fill:** The form inside the modal must be pre-filled with the data of the item being edited.
-  - [ ] **Update Logic:** Saving the modal form must trigger a `PUT` request to the correct API endpoint. On success, the modal must close, a success notification must be shown, and the item's data in the `SessionCreationList` must be visibly updated without a page reload.
+  - [ ] **Update Logic:** Saving the modal form must trigger a `PUT` request to the correct API endpoint using a `useMutation` hook.
+    - **Implement Optimistic Updates:** This mutation must also follow the optimistic update pattern. The item's data in the `SessionCreationList` must be visibly updated _instantly_.
+    - On success, the modal must close, and a success notification must be shown.
+    - On error, the UI must roll back, and an error notification must be shown.
   - [ ] **Reload Behavior:** Reloading the page while the edit modal is open must redirect the user back to the underlying "Cockpit" page.
 - **Finishing the Session:**
   - [ ] **Trigger:** Clicking the "Save and Finish" button must save the current form's data (if any) and then redirect the user to the main `DataTable` view for that data type (e.g., from `/dashboard/inventory/products/new` to `/dashboard/inventory/products`).
@@ -82,9 +86,10 @@ _This workflow will be implemented for Products first, then the pattern will be 
 - **Task 3.4 (Form Component):** Create the `src/components/features/products/product-creation-form.jsx` client component.
   - Use `react-hook-form` and `zod` for form state management and validation.
   - The form's `onSubmit` handler will use a `useMutation` hook from Tanstack Query to call the `POST /api/products` endpoint.
-  - Implement `onSuccess` and `onError` callbacks in the mutation to display `sonner` notifications.
-- **Task 3.5 (List Component):** Create the `src/components/features/products/session-creation-list.jsx` client component. This component will manage an array of newly created products in its local state.
-- **Task 3.6 (State Synchronization):** The parent "Cockpit" page component will manage the state of newly created items. When the `product-creation-form`'s mutation is successful, it will call a function passed via props to update the list in the parent, which will then re-render the `session-creation-list`.
+  - **Implement Optimistic Updates:** The mutation must follow the standard optimistic update pattern as defined in the TanStack Query guide (`guide-2-tanstack-query-server-state-management-guide.md`).
+  - Implement `onSuccess`, `onError`, and `onSettled` callbacks in the mutation to handle UI feedback (notifications, form resets) and cache management.
+- **Task 3.5 (List Component):** Create the `src/components/features/products/session-creation-list.jsx` client component. This component will now get its data directly from the TanStack Query cache, removing the need for local state management of the created items.
+- **Task 3.6 (State Synchronization):** The parent "Cockpit" page component will no longer need to manage local state for the created items. The `product-creation-form` will update the global TanStack Query cache, and the `session-creation-list` will automatically re-render with the new data from that cache.
 
 #### **Part 4: The `DataTable` View & Modal Editing (for Products - to be replicated)**
 
