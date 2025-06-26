@@ -106,11 +106,12 @@ export default function DataTable({
           <Input
             placeholder={filterPlaceholder}
             value={table.getColumn(actualFilterKey)?.getFilterValue() ?? ""}
-            onChange={(event) =>
+            onChange={(event) => {
               table
                 .getColumn(actualFilterKey)
-                ?.setFilterValue(event.target.value)
-            }
+                ?.setFilterValue(event.target.value);
+              table.setPageIndex(0); // Reset to first page on filter change
+            }}
             className="max-w-sm"
           />
         </div>
