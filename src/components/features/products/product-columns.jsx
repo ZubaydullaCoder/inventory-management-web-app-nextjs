@@ -7,17 +7,19 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Edit } from "lucide-react";
-import Link from "next/link";
+import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
 
 /**
  * Product table columns configuration for TanStack Table
  * Defines column structure, sorting, and actions for product data display
+ * @param {Function} onEdit - Callback function to trigger editing a product
+ * @param {Function} onDelete - Callback function to trigger deleting a product
  * @returns {Array} Column definitions array
  */
-export function createProductColumns() {
+export function createProductColumns(onEdit, onDelete) {
   return [
     {
       accessorKey: "name",
@@ -100,14 +102,20 @@ export function createProductColumns() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem asChild>
-                <Link
-                  href={`/dashboard/inventory/products/${product.id}/edit`}
-                  className="flex items-center"
-                >
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
-                </Link>
+              <DropdownMenuItem
+                onClick={() => onEdit(product.id)}
+                className="flex items-center cursor-pointer"
+              >
+                <Edit className="mr-2 h-4 w-4" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => onDelete(product.id)}
+                className="flex items-center cursor-pointer text-red-600 focus:text-red-600"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

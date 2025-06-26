@@ -29,20 +29,20 @@ _Note on Data Fetching Pattern:_
     - After a successful mutation, clear the form on the left and return focus to its first input field.
   - [ ] **API & Database:** The backend must have `POST` API endpoints for creating each data type (Category, Supplier, Customer, Product). Each successful request must create a new record in the corresponding database table, correctly linked to the authenticated user's account.
 - **Mid-Flow Correction (Modal Editing):**
-  - [ ] **Trigger:** Clicking the "Edit" icon next to an item in the `SessionCreationList` must open an intercepting route modal.
+  - [ ] **Trigger:** Clicking the "Edit" icon next to an item in the `SessionCreationList` must open a traditional modal dialog.
   - [ ] **Data Pre-fill:** The form inside the modal must be pre-filled with the data of the item being edited.
   - [ ] **Update Logic:** Saving the modal form must trigger a `PUT` request to the correct API endpoint using a `useMutation` hook.
     - **Implement Optimistic Updates:** This mutation must also follow the optimistic update pattern. The item's data in the `SessionCreationList` must be visibly updated _instantly_.
     - On success, the modal must close, and a success notification must be shown.
     - On error, the UI must roll back, and an error notification must be shown.
-  - [ ] **Reload Behavior:** Reloading the page while the edit modal is open must redirect the user back to the underlying "Cockpit" page.
+  - [ ] **Reload Behavior:** Reloading the page while the edit modal is open will simply close the modal and return the user to the underlying "Cockpit" page.
 - **Finishing the Session:**
   - [ ] **Trigger:** Clicking the "Save and Finish" button must save the current form's data (if any) and then redirect the user to the main `DataTable` view for that data type (e.g., from `/dashboard/inventory/products/new` to `/dashboard/inventory/products`).
 - **Main Data List Views (`DataTable`):**
   - [ ] **Page Structure:** The main list pages (e.g., `/dashboard/inventory/products`) must have a `PageHeader` with the correct title and an "Add New Product" button that links to the "Cockpit" page.
   - [ ] **Data Display:** The `DataTable` component must correctly fetch (using the Hybrid SSR pattern) and display the list of items created by the user.
   - [ ] **Empty State:** If no data exists for a given type, the `DataTable` area must display an `EmptyState` component guiding the user to add their first item.
-  - [ ] **Actions Menu:** Each row in the `DataTable` must have an "Actions" dropdown menu with an "Edit" option that correctly opens the intercepting edit modal.
+  - [ ] **Actions Menu:** Each row in the `DataTable` must have an "Actions" dropdown menu with an "Edit" option that opens a traditional modal for editing.
 
 ---
 
@@ -88,8 +88,13 @@ _This workflow will be implemented for Products first, then the pattern will be 
   - The form's `onSubmit` handler will use a `useMutation` hook from Tanstack Query to call the `POST /api/products` endpoint.
   - **Implement Optimistic Updates:** The mutation must follow the standard optimistic update pattern as defined in the TanStack Query guide (`guide-2-tanstack-query-server-state-management-guide.md`).
   - Implement `onSuccess`, `onError`, and `onSettled` callbacks in the mutation to handle UI feedback (notifications, form resets) and cache management.
-- **Task 3.5 (List Component):** Create the `src/components/features/products/session-creation-list.jsx` client component. This component will now get its data directly from the TanStack Query cache, removing the need for local state management of the created items.
-- **Task 3.6 (State Synchronization):** The parent "Cockpit" page component will no longer need to manage local state for the created items. The `product-creation-form` will update the global TanStack Query cache, and the `session-creation-list` will automatically re-render with the new data from that cache.
+- **Task 3.5 (List Component):** Create the `src/components/features/products/prodcut-session-creation-list.jsx` client component. This component will now get its data directly from the TanStack Query cache, removing the need for local state management of the created items.
+- **Task 3.6 (State Synchronization):** The parent "Cockpit" page component will no longer need to manage local state for the created items. The `product-creation-form` will update the global TanStack Query cache, and the `product-session-creation-list` will automatically re-render with the new data from that cache.
+- **Task 3.7 (Traditional Modal Editing):**
+  - Implement a traditional modal dialog for editing items in the `SessionCreationList`.
+  - The modal form must be pre-filled with the item's data and use a `useMutation` hook for updates, following optimistic update patterns.
+  - On success, close the modal and show a notification; on error, roll back changes and show an error notification.
+  - Reloading the page while the modal is open will simply close the modal.
 
 #### **Part 4: The `DataTable` View & Modal Editing (for Products - to be replicated)**
 
@@ -107,17 +112,16 @@ _This workflow will be implemented for Products first, then the pattern will be 
   - It will pass the data and columns to the `DataTable` component.
   - It will handle the case where no products exist by showing the `EmptyState` component.
 
-- **Task 4.6 (Modal Editing Setup):**
-  - Implement the intercepting route structure for editing: `src/app/(dashboard)/dashboard/products/@modal/(..)products/[id]/edit/`.
-  - Create the redirect fallback page at `src/app/(dashboard)/dashboard/products/[id]/edit/page.jsx`.
-  - Update the dashboard layout (`(dashboard)/dashboard/layout.jsx`) to render the `@modal` slot.
-- **Task 4.7 (Edit Modal UI):**
-  - Create the modal UI at `src/app/(dashboard)/dashboard/products/@modal/(..)products/[id]/edit/page.jsx`.
-  - This component will fetch the specific product's data and pass it to a reusable `product-form` component (which can be adapted from the creation form).
-  - The form's `onSubmit` will use a `useMutation` hook to call the `PUT /api/products/[id]` endpoint.
+- **Task 4.6 (Traditional Modal Editing):**
+  - Remove intercepting route structure for editing.
+  - Implement a traditional modal dialog for editing products from the `DataTable` "Actions" menu.
+  - The modal fetches the specific product's data and passes it to a reusable `product-form` component (adapted from the creation form).
+  - The form's `onSubmit` uses a `useMutation` hook to call the `PUT /api/products/[id]` endpoint, following optimistic update patterns.
+  - On success, close the modal and show a notification; on error, roll back changes and show an error notification.
+  - Reloading the page while the modal is open will simply close the modal.
 
 #### **Part 5: Replication**
 
-- **Task 5.1 (Replicate for Categories):** Repeat the patterns from Part 3 and Part 4 to build the full CRUD workflow for Categories.
-- **Task 5.2 (Replicate for Suppliers):** Repeat the patterns to build the full CRUD workflow for Suppliers.
-- **Task 5.3 (Replicate for Customers):** Repeat the patterns to build the full CRUD workflow for Customers.
+- **Task 5.1 (Replicate for Categories):** Repeat the patterns from Part 3 and Part 4 to build the full CRUD workflow for Categories, using traditional modals for editing.
+- **Task 5.2 (Replicate for Suppliers):** Repeat the patterns to build the full CRUD workflow for Suppliers, using traditional modals for editing.
+- **Task 5.3 (Replicate for Customers):** Repeat the patterns to build the full CRUD workflow for Customers, using traditional modals for editing.

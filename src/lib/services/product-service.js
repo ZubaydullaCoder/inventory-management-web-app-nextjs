@@ -1,8 +1,6 @@
 // /src/lib/services/product-service.js
-import { PrismaClient } from "@prisma/client";
-import { nanoid } from "nanoid"; // Add this import
-
-const prisma = new PrismaClient();
+import prisma from "@/lib/prisma";
+import { nanoid } from "nanoid";
 
 /**
  * Product creation data
@@ -221,6 +219,50 @@ export async function updateProduct(userId, productId, productData) {
   } catch (error) {
     console.error("Error updating product:", error);
     throw new Error("Failed to update product");
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+/**
+ * Deletes a product for the specified user (with transaction history check)
+ * @param {string} userId - The user ID who owns the product
+ * @param {string} productId - The product ID to delete
+ * @returns {Promise<void>}
+ */
+export async function deleteProductById(userId, productId) {
+  try {
+    // Ensure the product belongs to the user
+    const existingProduct = await prisma.product.findFirst({
+      where: {
+        id: productId,
+        userId,
+      },
+    });
+
+    if (!existingProduct) {
+      throw new Error("Product not found or access denied");
+    }
+
+    // Check for transaction history (sales, purchases, adjustments)
+    // For MVP, we'll implement a basic check - this can be expanded later
+    // when we have sales and purchase transaction tables
+
+    // For now, just delete the product
+    // TODO: Add transaction history checks when sales/purchase tables are implemented
+
+    await prisma.product.delete({
+      where: { id: productId },
+    });
+  } catch (error) {
+    if (error.code === "P2003") {
+      // Foreign key constraint error - has related records
+      throw new Error(
+        "Cannot delete product: it has associated transaction history. Consider deactivating it instead."
+      );
+    }
+    console.error("Error deleting product:", error);
+    throw new Error(error.message || "Failed to delete product");
   } finally {
     await prisma.$disconnect();
   }

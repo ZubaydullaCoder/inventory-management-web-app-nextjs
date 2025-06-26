@@ -9,7 +9,8 @@ import {
   getSortedRowModel,
   getFilteredRowModel,
 } from "@tanstack/react-table";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -48,9 +49,31 @@ export default function DataTable({
   filterKey = null,
   filterPlaceholder = "Filter...",
 }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Get pagination from URL or set defaults
+  const page = searchParams.get("page") ?? "1";
+  const perPage = searchParams.get("per_page") ?? "10";
+
   const [sorting, setSorting] = useState([]);
   const [columnFilters, setColumnFilters] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
+
+  const [pagination, setPagination] = useState({
+    pageIndex: Number(page) - 1,
+    pageSize: Number(perPage),
+  });
+
+  // Update URL when pagination changes
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    params.set("page", (pagination.pageIndex + 1).toString());
+    params.set("per_page", pagination.pageSize.toString());
+    // Use replace to avoid adding to browser history and preserve scroll position
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [pagination, router, pathname, searchParams]);
 
   // Determine the filter key (first column's accessorKey if not provided)
   const actualFilterKey = filterKey || columns[0]?.accessorKey;
@@ -65,10 +88,13 @@ export default function DataTable({
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
+    onPaginationChange: setPagination,
+    autoResetPageIndex: false, // Prevents pagination reset on data change
     state: {
       sorting,
       columnFilters,
       globalFilter,
+      pagination,
     },
   });
 

@@ -15,15 +15,15 @@ _This section serves as a detailed checklist. The AI agent's implementation of t
   - [ ] **Responsiveness:** The landing page must be fully responsive and functional on mobile, tablet, and desktop screen sizes without any content overflow or broken layouts.
   - [ ] **Branding:** The primary color (`#359EFF`) and "Inter" font must be applied correctly across all elements as per the Design System guide.
 - **Authentication Flow (Happy Path):**
-  - [ ] **Trigger:** Clicking any "Start Free Trial" or "Login" button on the landing page must update the URL to `/login` and open the `AuthModal` using an intercepting route. The background landing page must remain visible.
+  - [ ] **Trigger:** Clicking any "Start Free Trial" or "Login" button on the landing page must open an `AuthModal` (traditional modal component) over the current page. The URL should remain unchanged.
   - [ ] **Google Sign-In:** Clicking the "Continue with Google" button must initiate the standard Google OAuth pop-up flow.
   - [ ] **Database Creation:** Upon successful first-time authentication, a new `User` record must be created in the database with the user's Google profile information.
   - [ ] **Trial Subscription:** Simultaneously, a new `Subscription` record must be created, linked to the new user, with a status of `TRIAL` and an `expiresAt` date set to 14 days in the future.
   - [ ] **Redirection:** After successful sign-in and database creation, the user must be redirected to the `/dashboard` page.
 - **Authentication Flow (Edge Cases & Security):**
-  - [ ] **Reload Behavior:** If the user reloads the page while the `AuthModal` is open (i.e., at the `/login` URL), they must be redirected back to the root landing page (`/`). The fallback page must not be displayed.
+  - [ ] **Modal State:** If the user reloads the page while the `AuthModal` is open, the modal should close and the user should remain on the landing page.
   - [ ] **Authentication Failure:** If the Google OAuth flow fails or is cancelled by the user, the `AuthModal` must remain open, and a non-intrusive error notification must be displayed using `sonner` (e.g., "Authentication failed. Please try again.").
-  - [ ] **Authenticated User on Public Page:** If a logged-in user attempts to navigate to the landing page (`/`) or the `/login` URL, the middleware must intercept the request and redirect them to `/dashboard`.
+  - [ ] **Authenticated User on Public Page:** If a logged-in user attempts to navigate to the landing page (`/`), the middleware must intercept the request and redirect them to `/dashboard`.
 - **Backend & Database:**
   - [ ] **Schema:** The `User` and `Subscription` tables must exist in the database with the correct columns and relations as defined in the `schema.prisma` file.
   - [ ] **API Security:** The `/api/auth/*` endpoints must function correctly. The JWT session cookie must be set as `HttpOnly` and secure.
@@ -76,18 +76,14 @@ _This section serves as a detailed checklist. The AI agent's implementation of t
 
 - **Task 4.1 (Page Creation):** Create the main landing page file at `src/app/page.jsx`.
 - **Task 4.2 (Composition):** Compose the landing page by importing and arranging the components created in Part 3. Build out the Hero, Features, Pricing, and CTA sections as described in the UI/UX guide.
-- **Task 4.3 (Linking):** Ensure all "Start Free Trial" and "Login" buttons are standard Next.js `<Link>` components with their `href` attribute set to `/login`.
+- **Task 4.3 (Linking):** Ensure all "Start Free Trial" and "Login" buttons open the `AuthModal` (traditional modal) when clicked, instead of navigating to a new route.
 
-#### **Part 5: Frontend - Implementing the Intercepting Auth Modal**
+#### **Part 5: Frontend - Implementing the Traditional Auth Modal**
 
-- **Task 5.1 (Directory Structure):** Create the required directory structure for the intercepting route: `src/app/@modal/(.)login/`.
-- **Task 5.2 (Fallback Redirect):** Create the fallback page at `src/app/login/page.jsx`. This file's only purpose is to call `redirect('/')` to send users back to the landing page if they access `/login` directly.
-- **Task 5.3 (Layout Update):** Modify the root layout (`src/app/layout.jsx`) to accept and render the `modal` prop alongside `children`.
-- **Task 5.4 (Modal UI):**
-  - Create the modal's UI page at `src/app/@modal/(.)login/page.jsx`.
-  - Use the `shadcn/ui` `Dialog` component to structure the modal. It should have a title like "Welcome".
+- **Task 5.1 (Modal Component):** Create a reusable `AuthModal` component using the `shadcn/ui` `Dialog` component. The modal should have a title like "Welcome".
+- **Task 5.2 (Modal Integration):** Integrate the `AuthModal` into the root layout or a top-level provider so it can be triggered from anywhere on the landing page.
+- **Task 5.3 (Sign-In UI):**
   - Inside the modal, create a client component named `google-signin-button.jsx`.
-- **Task 5.5 (Sign-In Logic):**
-  - Inside the `google-signin-button.jsx` component, create a button with the text "Continue with Google".
-  - The `onClick` handler for this button should call the `signIn('google', { callbackUrl: '/dashboard' })` function from `next-auth/react`.
-- **Task 5.6 (Error Handling):** Wrap the `signIn` call in a `try...catch` block. If an error is caught, use the `toast.error()` function from `sonner` to display a user-friendly error message.
+  - The button should display "Continue with Google" and use the `signIn('google', { callbackUrl: '/dashboard' })` function from `next-auth/react` in its `onClick` handler.
+- **Task 5.4 (Error Handling):** Wrap the `signIn` call in a `try...catch` block. If an error is caught, use the `toast.error()` function from `sonner` to display a user-friendly error message.
+- **Task 5.5 (Modal State):** Ensure modal open/close state is managed via React state or context, and that the modal closes on successful authentication or when the user dismisses it.

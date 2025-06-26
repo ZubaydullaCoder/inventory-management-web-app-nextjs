@@ -199,26 +199,6 @@ export default function Sidebar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const pathname = usePathname();
 
-  // Handle responsive behavior
-  useEffect(() => {
-    const handleResize = () => {
-      const isMobile = window.innerWidth < 768;
-      if (isMobile) {
-        setIsCollapsed(true);
-        setIsMobileOpen(false);
-      }
-    };
-
-    // Set initial state
-    const isMobile = window.innerWidth < 768;
-    if (isMobile) {
-      setIsCollapsed(true);
-    }
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
   // Close mobile menu on route change
   useEffect(() => {
     setIsMobileOpen(false);

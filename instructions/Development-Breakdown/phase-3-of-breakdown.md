@@ -27,10 +27,10 @@ _Note on Data Fetching Pattern:_
 - **Reports & History Pages:**
   - [ ] **Tabbed Layout:** The `/reports` page must use the `PageTabs` component to organize the different views ("Reports," "Sales History," "Purchase History," "Stock Adjustments").
   - [ ] **DataTables:** Each tab's content area must correctly use the `DataTable` component to display the relevant data.
-  - [ ] **Interaction:** Clicking on a row in the "Sales History" or "Purchase History" tables must open a modal displaying the full, detailed receipt for that transaction.
+  - [ ] **Interaction:** Clicking on a row in the "Sales History" or "Purchase History" tables must open a traditional modal displaying the full, detailed receipt for that transaction.
 - **Accounts Management (Receivable & Payable):**
   - [ ] **Page Content:** The `/customers/receivables` and `/purchases/payables` pages must each display a `DataTable` listing only the customers or suppliers with a non-zero balance.
-  - [ ] **Record Payment:** The "Record Payment" action in the `DataTable` must open a modal pre-filled with the customer/supplier's name and their full outstanding balance.
+  - [ ] **Record Payment:** The "Record Payment" action in the `DataTable` must open a traditional modal pre-filled with the customer/supplier's name and their full outstanding balance.
   - [ ] **Update Logic:** Submitting the "Record Payment" modal must trigger a `POST` request to a new API endpoint. On success, the customer/supplier's balance must be correctly decreased in the database, and the `DataTable` on the page must optimistically update to reflect the change (potentially removing the entry if the balance becomes zero).
 - **Subscription Management Page:**
   - [ ] **UI Display:** A page under a `/settings` route must display the three subscription plan `PricingCard`s.
@@ -77,7 +77,7 @@ _Note on Data Fetching Pattern:_
   - Each `TabsContent` section will contain a client component responsible for fetching and displaying its specific data.
 - **Task 3.3 (Transaction Ledgers):**
   - For the "Sales History" and "Purchase History" tabs, create components that use the `DataTable` to display a searchable list of all individual transactions.
-  - Implement the "View Details" modal using an intercepting route. This modal will fetch and display all line items for the selected transaction.
+  - Implement the "View Details" modal using a traditional modal component. This modal will fetch and display all line items for the selected transaction.
 
 #### **Part 4: Accounts Management (Payables & Receivables)**
 
@@ -85,7 +85,7 @@ _Note on Data Fetching Pattern:_
 - **Task 4.2 (Page Creation):** Create the two pages: `src/app/(dashboard)/customers/receivables/page.jsx` and `src/app/(dashboard)/purchases/payables/page.jsx`.
 - **Task 4.3 (UI & Data):** Both pages will fetch and display the list of customers/suppliers with non-zero balances in a `DataTable`.
 - **Task 4.4 (Record Payment Modal):**
-  - Implement the "Record Payment" action using an intercepting route modal.
+  - Implement the "Record Payment" action using a traditional modal component.
   - The modal will contain a simple form with a pre-filled amount.
   - The form submission will use a `useMutation` hook to call the payments API endpoint. It must use an optimistic update to instantly modify the balance in the `DataTable` and then invalidate the query on settlement.
 

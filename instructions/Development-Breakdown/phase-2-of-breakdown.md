@@ -28,7 +28,7 @@ _Note on Data Fetching Pattern:_
   - [ ] **On-the-Fly Product Creation:** Clicking the "+" button next to the search bar must open a minimal modal to add a new, "incomplete" product (Name, Selling Price). Upon saving, this product must be immediately available in the current transaction.
   - [ ] **Cash Sale Finalization:** Clicking "Complete Sale (Cash)" must trigger a `POST` request to the sales API. On success, the transaction list must clear, a success `sonner` notification must appear, and the system must be ready for a new sale. The stock levels for sold products must be correctly decremented in the database.
 - **"Finalize On Account" Workflow:**
-  - [ ] **Modal Trigger:** Clicking "Finalize On Account" must open the intercepting route modal for selecting or creating a customer.
+  - [ ] **Modal Trigger:** Clicking "Finalize On Account" must open a traditional modal for selecting or creating a customer.
   - [ ] **Customer Search:** The `CreatableSelect` component inside the modal must be auto-focused and allow searching for existing customers or creating a new one.
   - [ ] **State Update:** Selecting an existing customer must populate the disabled `CustomerInfoForm` and display their current outstanding balance. The form fields must become editable.
   - [ ] **Finalization:** Clicking "Save and Complete Sale" must:
@@ -81,9 +81,9 @@ _Note on Data Fetching Pattern:_
 
 #### **Part 3: The "Finalize On Account" Modal Workflow**
 
-- **Task 3.1 (Modal Setup):** Implement the intercepting route structure for the "On Account" flow, e.g., at `src/app/(dashboard)/sales/@modal/finalize-on-account/`. Create the corresponding redirect fallback page.
+- **Task 3.1 (Modal Setup):** Implement a traditional modal for the "On Account" flow, opened from the sales screen when "Finalize On Account" is clicked.
 - **Task 3.2 (Modal UI):**
-  - Create the modal UI page within the intercepting route folder.
+  - Create the modal UI component.
   - At the top, integrate the `CreatableSelect` component for finding/creating a customer.
   - Below it, create a disabled `CustomerInfoForm` component.
   - Include the `StatCard` for displaying the "Current Outstanding Balance".
