@@ -1,6 +1,6 @@
 // /src/lib/hooks/use-debounced-name-validation.js
 import { useState, useEffect, useCallback } from "react";
-import { useDebounce } from "./use-debounce";
+import { useDebounce } from "use-debounce";
 
 /**
  * Hook for debounced product name validation
@@ -18,7 +18,7 @@ export function useDebouncedNameValidation(
   const [isUnique, setIsUnique] = useState(null);
   const [error, setError] = useState(null);
 
-  const debouncedName = useDebounce(name, delay);
+  const [debouncedName] = useDebounce(name, delay);
 
   const checkName = useCallback(
     async (nameToCheck) => {
