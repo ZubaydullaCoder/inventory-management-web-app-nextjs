@@ -3,14 +3,38 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { queryKeys } from "@/lib/queryKeys";
+import { useDebouncedNameValidation } from "@/lib/hooks/use-debounced-name-validation";
+
+/**
+ * Common selling units for products
+ */
+const SELLING_UNITS = [
+  { value: "piece", label: "Piece" },
+  { value: "kg", label: "Kilogram (kg)" },
+  { value: "g", label: "Gram (g)" },
+  { value: "l", label: "Liter (l)" },
+  { value: "ml", label: "Milliliter (ml)" },
+  { value: "m", label: "Meter (m)" },
+  { value: "cm", label: "Centimeter (cm)" },
+  { value: "pack", label: "Pack" },
+  { value: "box", label: "Box" },
+];
 
 /**
  * Product form validation schema
@@ -23,6 +47,7 @@ const ProductFormSchema = z.object({
   purchasePrice: z.string().optional(),
   stock: z.string().optional(),
   reorderPoint: z.string().optional(),
+  unit: z.string().min(1, "Selling unit is required"),
   categoryId: z.string().optional(),
   supplierId: z.string().optional(),
 });
@@ -37,9 +62,23 @@ const ProductFormSchema = z.object({
  * @property {string} [purchasePrice] - Product purchase price (as string for form)
  * @property {string} [stock] - Initial stock quantity (as string for form)
  * @property {string} [reorderPoint] - Reorder point threshold (as string for form)
+ * @property {string} unit - Product selling unit
  * @property {string} [categoryId] - Category ID (optional)
  * @property {string} [supplierId] - Supplier ID (optional)
  */
+
+/**
+ * Fetches categories from API
+ * @returns {Promise<Array>} Array of categories
+ */
+async function fetchCategories() {
+  const response = await fetch("/api/categories");
+  if (!response.ok) {
+    throw new Error("Failed to fetch categories");
+  }
+  const data = await response.json();
+  return data.data;
+}
 
 /**
  * Creates a new product via API
@@ -58,6 +97,9 @@ async function createProduct(formData) {
     reorderPoint: formData.reorderPoint
       ? parseInt(formData.reorderPoint)
       : undefined,
+    // Don't send empty categoryId
+    categoryId:
+      formData.categoryId === "uncategorized" ? undefined : formData.categoryId,
   };
 
   const response = await fetch("/api/products", {
@@ -90,6 +132,8 @@ export default function ProductCreationForm({ onProductCreated }) {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(ProductFormSchema),
@@ -101,10 +145,30 @@ export default function ProductCreationForm({ onProductCreated }) {
       purchasePrice: "",
       stock: "0",
       reorderPoint: "0",
+      unit: "piece",
+      categoryId: "uncategorized",
     },
   });
 
-  // Mutation with optimistic updates following Guide 2 pattern
+  // Watch the name field for validation
+  const watchedName = watch("name");
+
+  // Debounced name validation
+  const {
+    isChecking: isCheckingName,
+    isUnique,
+    error: nameValidationError,
+    hasChecked,
+  } = useDebouncedNameValidation(watchedName);
+
+  // Fetch categories
+  const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
+    queryKey: queryKeys.list("categories"),
+    queryFn: fetchCategories,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  // Mutation with optimistic updates
   const createProductMutation = useMutation({
     mutationFn: createProduct,
     onMutate: async (newProductData) => {
@@ -119,10 +183,14 @@ export default function ProductCreationForm({ onProductCreated }) {
         queryKeys.session("products")
       );
 
-      // 3. Create optimistic product with temporary data (store timestamp for identification)
+      // 3. Create optimistic product with temporary data
       const optimisticTimestamp = Date.now();
+      const selectedCategory = categories.find(
+        (cat) => cat.id === newProductData.categoryId
+      );
+
       const optimisticProduct = {
-        id: `optimistic-${optimisticTimestamp}`, // Temporary ID with timestamp
+        id: `optimistic-${optimisticTimestamp}`,
         name: newProductData.name,
         description: newProductData.description || "",
         sku: newProductData.sku || "",
@@ -134,14 +202,12 @@ export default function ProductCreationForm({ onProductCreated }) {
         reorderPoint: newProductData.reorderPoint
           ? parseInt(newProductData.reorderPoint)
           : 0,
+        unit: newProductData.unit,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        category: null,
+        category: selectedCategory || null,
         supplier: null,
-        _count: {
-          /* default structure */
-        },
-        // Store timestamp for later identification
+        _count: {},
         _optimisticTimestamp: optimisticTimestamp,
       };
 
@@ -151,11 +217,9 @@ export default function ProductCreationForm({ onProductCreated }) {
         return [optimisticProduct, ...currentProducts];
       });
 
-      // 5. Return context with snapshot and timestamp for potential rollback
       return { previousSessionProducts, optimisticTimestamp };
     },
     onError: (error, newProductData, context) => {
-      // 6. Rollback on error
       toast.error(`Failed to create product: ${error.message}`);
       if (context?.previousSessionProducts !== undefined) {
         queryClient.setQueryData(
@@ -165,32 +229,23 @@ export default function ProductCreationForm({ onProductCreated }) {
       }
     },
     onSettled: () => {
-      // 7. Invalidate the main products list to ensure eventual consistency
-      //    DO NOT invalidate the session list, as it's client-managed.
       queryClient.invalidateQueries({ queryKey: queryKeys.list("products") });
     },
     onSuccess: (response, formData, context) => {
-      // 8. Handle success
       toast.success("Product created successfully!");
 
-      // Replace ONLY the specific optimistic product with real server data
+      // Replace optimistic product with real server data
       queryClient.setQueryData(queryKeys.session("products"), (old) => {
         const currentProducts = old || [];
-
-        // Find and replace the specific optimistic product by timestamp
         const updatedProducts = currentProducts.map((product) => {
-          // Check if this is the optimistic product we just created
           if (product._optimisticTimestamp === context.optimisticTimestamp) {
-            // Replace with real server data (use response.data directly)
             return response.data;
           }
           return product;
         });
-
         return updatedProducts;
       });
 
-      // Call optional callback
       if (onProductCreated) {
         onProductCreated(response.data);
       }
@@ -202,14 +257,65 @@ export default function ProductCreationForm({ onProductCreated }) {
    * @param {ProductFormData} data - Form data
    */
   const onSubmit = (data) => {
+    // Check name uniqueness before submitting
+    if (!isUnique && hasChecked && watchedName.trim().length > 0) {
+      toast.error("Please use a unique product name");
+      return;
+    }
+
     createProductMutation.mutate(data);
 
-    // Clear form and focus first input immediately for quick continuation
+    // Clear form and focus first input for quick continuation
     reset();
     setTimeout(() => {
       const firstInput = document.querySelector('input[name="name"]');
       if (firstInput) firstInput.focus();
     }, 100);
+  };
+
+  /**
+   * Renders name validation indicator
+   */
+  const renderNameValidation = () => {
+    if (!watchedName || watchedName.trim().length === 0) return null;
+
+    if (isCheckingName) {
+      return (
+        <div className="flex items-center text-sm text-blue-600">
+          <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+          Checking availability...
+        </div>
+      );
+    }
+
+    if (nameValidationError) {
+      return (
+        <div className="flex items-center text-sm text-red-600">
+          <XCircle className="w-4 h-4 mr-1" />
+          Error checking name
+        </div>
+      );
+    }
+
+    if (hasChecked && isUnique) {
+      return (
+        <div className="flex items-center text-sm text-green-600">
+          <CheckCircle className="w-4 h-4 mr-1" />
+          Name is available
+        </div>
+      );
+    }
+
+    if (hasChecked && !isUnique) {
+      return (
+        <div className="flex items-center text-sm text-red-600">
+          <XCircle className="w-4 h-4 mr-1" />A product with this name already
+          exists
+        </div>
+      );
+    }
+
+    return null;
   };
 
   return (
@@ -226,11 +332,41 @@ export default function ProductCreationForm({ onProductCreated }) {
               id="name"
               {...register("name")}
               placeholder="Enter product name"
-              className={errors.name ? "border-red-500" : ""}
+              className={
+                errors.name || (!isUnique && hasChecked) ? "border-red-500" : ""
+              }
             />
             {errors.name && (
               <p className="text-sm text-red-500">{errors.name.message}</p>
             )}
+            {renderNameValidation()}
+          </div>
+
+          {/* Category */}
+          <div className="space-y-2">
+            <Label htmlFor="categoryId">Category</Label>
+            <Select
+              onValueChange={(value) => setValue("categoryId", value)}
+              defaultValue="uncategorized"
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="uncategorized">Uncategorized</SelectItem>
+                {isLoadingCategories ? (
+                  <SelectItem disabled value="loading">
+                    Loading categories...
+                  </SelectItem>
+                ) : (
+                  categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Description */}
@@ -251,6 +387,26 @@ export default function ProductCreationForm({ onProductCreated }) {
               {...register("sku")}
               placeholder="Product SKU (optional)"
             />
+          </div>
+
+          {/* Selling Unit */}
+          <div className="space-y-2">
+            <Label htmlFor="unit">Selling Unit *</Label>
+            <Select
+              onValueChange={(value) => setValue("unit", value)}
+              defaultValue="piece"
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select selling unit" />
+              </SelectTrigger>
+              <SelectContent>
+                {SELLING_UNITS.map((unit) => (
+                  <SelectItem key={unit.value} value={unit.value}>
+                    {unit.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Price Fields */}
@@ -310,7 +466,11 @@ export default function ProductCreationForm({ onProductCreated }) {
           {/* Submit Button */}
           <Button
             type="submit"
-            disabled={createProductMutation.isPending}
+            disabled={
+              createProductMutation.isPending ||
+              isCheckingName ||
+              (!isUnique && hasChecked && watchedName.trim().length > 0)
+            }
             className="w-full"
           >
             {createProductMutation.isPending

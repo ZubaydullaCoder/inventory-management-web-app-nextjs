@@ -19,6 +19,8 @@ const UpdateProductSchema = z.object({
   purchasePrice: z.number().positive().optional(),
   stock: z.number().int().min(0).optional(),
   reorderPoint: z.number().int().min(0).optional(),
+  unit: z.string().optional(),
+  categoryId: z.string().optional(),
 });
 
 /**

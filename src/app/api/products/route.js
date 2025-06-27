@@ -22,6 +22,7 @@ const CreateProductSchema = z.object({
     .int()
     .min(0, "Reorder point cannot be negative")
     .optional(),
+  unit: z.string().optional(),
   categoryId: z.string().optional(),
   supplierId: z.string().optional(),
 });

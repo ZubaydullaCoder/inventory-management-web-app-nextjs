@@ -114,6 +114,7 @@ model Product {
   purchasePrice Float?
   stock        Int     @default(0)
   reorderPoint Int     @default(0)
+  unit         String  @default("piece") // New field for selling unit
   
   // Data ownership
   userId String
@@ -130,4 +131,5 @@ model Product {
   updatedAt DateTime @updatedAt
   
   @@unique([userId, sku]) // Prevent duplicate SKUs per user
+  @@unique([userId, name]) // Prevent duplicate product names per user
 }

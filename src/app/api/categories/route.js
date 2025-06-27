@@ -3,17 +3,46 @@ import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
-  createCategory,
   getCategoriesByUser,
+  createCategory,
 } from "@/lib/services/category-service";
 
 /**
- * Category creation schema for validation
+ * Category creation validation schema
  */
 const CreateCategorySchema = z.object({
   name: z.string().min(1, "Category name is required").max(255),
   description: z.string().optional(),
 });
+
+/**
+ * Handles GET requests to fetch categories
+ * GET /api/categories
+ * @param {Request} request - The incoming request object
+ * @returns {Promise<NextResponse>} JSON response with categories
+ */
+export async function GET(request) {
+  try {
+    // Authentication check
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const categories = await getCategoriesByUser(session.user.id);
+
+    return NextResponse.json({
+      success: true,
+      data: categories,
+    });
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch categories" },
+      { status: 500 }
+    );
+  }
+}
 
 /**
  * Handles POST requests to create a new category
@@ -23,81 +52,42 @@ const CreateCategorySchema = z.object({
  */
 export async function POST(request) {
   try {
-    // Authentication check (Defense in Depth)
+    // Authentication check
     const session = await auth();
-
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Parse and validate request body
     const body = await request.json();
-    const validatedData = CreateCategorySchema.parse(body);
 
-    // Create category via service layer
-    const category = await createCategory(session.user.id, validatedData);
-
-    return NextResponse.json(
-      {
-        success: true,
-        data: category,
-        message: "Category created successfully",
-      },
-      { status: 201 }
-    );
-  } catch (error) {
-    console.error("Category creation API error:", error);
-
-    // Handle validation errors
-    if (error instanceof z.ZodError) {
+    // Validate request body
+    const validationResult = CreateCategorySchema.safeParse(body);
+    if (!validationResult.success) {
       return NextResponse.json(
         {
           error: "Validation failed",
-          details: error.errors,
+          details: validationResult.error.errors,
         },
         { status: 400 }
       );
     }
 
-    // Handle other errors
-    return NextResponse.json(
-      { error: error.message || "Internal server error" },
-      { status: 500 }
+    const category = await createCategory(
+      session.user.id,
+      validationResult.data
     );
-  }
-}
 
-/**
- * Handles GET requests to fetch categories
- * GET /api/categories
- * @param {Request} request - The incoming request object
- * @returns {Promise<NextResponse>} JSON response with categories list
- */
-export async function GET(request) {
-  try {
-    // Authentication check (Defense in Depth)
-    const session = await auth();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Parse query parameters
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "10");
-
-    // Fetch categories via service layer
-    const result = await getCategoriesByUser(session.user.id, { page, limit });
-
-    return NextResponse.json({
-      success: true,
-      data: result,
-    });
-  } catch (error) {
-    console.error("Categories fetch API error:", error);
     return NextResponse.json(
-      { error: error.message || "Internal server error" },
+      {
+        success: true,
+        data: category,
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error("Error creating category:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to create category" },
       { status: 500 }
     );
   }

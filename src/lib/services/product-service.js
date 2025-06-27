@@ -3,6 +3,38 @@ import prisma from "@/lib/prisma";
 import { nanoid } from "nanoid";
 
 /**
+ * Checks if a product name is unique for a user
+ * @param {string} userId - The user ID
+ * @param {string} name - Product name to check
+ * @param {string} [excludeProductId] - Product ID to exclude from check (for updates)
+ * @returns {Promise<boolean>} True if name is unique, false otherwise
+ */
+export async function isProductNameUnique(
+  userId,
+  name,
+  excludeProductId = null
+) {
+  try {
+    const existingProduct = await prisma.product.findFirst({
+      where: {
+        userId,
+        name: {
+          equals: name,
+          mode: "insensitive", // Case-insensitive comparison
+        },
+        ...(excludeProductId && { id: { not: excludeProductId } }),
+      },
+      select: { id: true },
+    });
+
+    return !existingProduct;
+  } catch (error) {
+    console.error("Error checking product name uniqueness:", error);
+    throw new Error("Failed to check product name uniqueness");
+  }
+}
+
+/**
  * Product creation data
  * @typedef {Object} CreateProductData
  * @property {string} name - Product name
@@ -12,6 +44,7 @@ import { nanoid } from "nanoid";
  * @property {number} [purchasePrice] - Product purchase price
  * @property {number} [stock] - Initial stock quantity
  * @property {number} [reorderPoint] - Reorder point threshold
+ * @property {string} [unit] - Product selling unit
  * @property {string} [categoryId] - Category ID (optional)
  * @property {string} [supplierId] - Supplier ID (optional)
  */
@@ -26,6 +59,7 @@ import { nanoid } from "nanoid";
  * @property {number} [purchasePrice] - Product purchase price
  * @property {number} [stock] - Stock quantity
  * @property {number} [reorderPoint] - Reorder point threshold
+ * @property {string} [unit] - Product selling unit
  * @property {string} [categoryId] - Category ID (optional)
  * @property {string} [supplierId] - Supplier ID (optional)
  */
@@ -60,6 +94,12 @@ async function generateUniqueSku(userId) {
  */
 export async function createProduct(userId, productData) {
   try {
+    // Check name uniqueness
+    const isNameUnique = await isProductNameUnique(userId, productData.name);
+    if (!isNameUnique) {
+      throw new Error("A product with this name already exists");
+    }
+
     let sku = productData.sku?.trim();
     if (!sku) {
       sku = await generateUniqueSku(userId);
@@ -79,6 +119,7 @@ export async function createProduct(userId, productData) {
         reorderPoint: productData.reorderPoint
           ? Number(productData.reorderPoint)
           : 0,
+        unit: productData.unit || "piece",
       },
       include: {
         category: true,
@@ -89,11 +130,16 @@ export async function createProduct(userId, productData) {
     return product;
   } catch (error) {
     // Prisma unique constraint error
-    if (error.code === "P2002" && error.meta?.target?.includes("sku")) {
-      throw new Error("SKU must be unique for this user.");
+    if (error.code === "P2002") {
+      if (error.meta?.target?.includes("name")) {
+        throw new Error("A product with this name already exists");
+      }
+      if (error.meta?.target?.includes("sku")) {
+        throw new Error("SKU must be unique for this user");
+      }
     }
     console.error("Error creating product:", error);
-    throw new Error("Failed to create product");
+    throw new Error(error.message || "Failed to create product");
   } finally {
     await prisma.$disconnect();
   }
@@ -189,6 +235,18 @@ export async function updateProduct(userId, productId, productData) {
       throw new Error("Product not found or access denied");
     }
 
+    // Check name uniqueness if name is being updated
+    if (productData.name && productData.name !== existingProduct.name) {
+      const isNameUnique = await isProductNameUnique(
+        userId,
+        productData.name,
+        productId
+      );
+      if (!isNameUnique) {
+        throw new Error("A product with this name already exists");
+      }
+    }
+
     const product = await prisma.product.update({
       where: { id: productId },
       data: {
@@ -217,8 +275,16 @@ export async function updateProduct(userId, productId, productData) {
 
     return product;
   } catch (error) {
+    if (error.code === "P2002") {
+      if (error.meta?.target?.includes("name")) {
+        throw new Error("A product with this name already exists");
+      }
+      if (error.meta?.target?.includes("sku")) {
+        throw new Error("SKU must be unique for this user");
+      }
+    }
     console.error("Error updating product:", error);
-    throw new Error("Failed to update product");
+    throw new Error(error.message || "Failed to update product");
   } finally {
     await prisma.$disconnect();
   }
