@@ -522,10 +522,11 @@ export default function ProductEditModal({ productId, isOpen, onClose }) {
               <Label htmlFor="categoryId">Category</Label>
               <Select
                 onValueChange={(value) => setValue("categoryId", value)}
-                value={watch("categoryId")}
+                value={watch("categoryId") || "uncategorized"}
+                defaultValue={watch("categoryId") || "uncategorized"}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="uncategorized">Uncategorized</SelectItem>
@@ -561,10 +562,11 @@ export default function ProductEditModal({ productId, isOpen, onClose }) {
               <Label htmlFor="unit">Selling Unit *</Label>
               <Select
                 onValueChange={(value) => setValue("unit", value)}
-                value={watch("unit")}
+                value={watch("unit") || "piece"}
+                defaultValue={watch("unit") || "piece"}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select selling unit" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {SELLING_UNITS.map((unit) => (
