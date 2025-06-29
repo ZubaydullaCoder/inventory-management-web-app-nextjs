@@ -41,6 +41,7 @@ export function useDebouncedNameValidation(
         if (normalizedName === normalizedInitialName) {
           setIsUnique(null);
           setError(null);
+          lastCheckedNameRef.current = null; // Reset the last checked name ref
         }
         return;
       }
