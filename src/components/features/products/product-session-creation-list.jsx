@@ -7,17 +7,8 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Edit, Package, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { queryKeys } from "@/lib/queryKeys";
+import ProductDeleteDialog from "./product-delete-dialog";
 
 /**
  * Deletes a product via API
@@ -240,32 +231,12 @@ export default function SessionCreationList({ onEditProduct }) {
         </CardContent>
       </Card>
 
-      <AlertDialog
-        open={!!deletingProduct}
-        onOpenChange={() => setDeletingProduct(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Product</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{deletingProduct?.name}"?{" "}
-              {deletingProduct?.id.toString().startsWith("optimistic-")
-                ? "This will remove it from the current session."
-                : "This action cannot be undone. If this product has transaction history, the deletion will be blocked."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={deleteMutation.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleteMutation.isPending ? "Deleting..." : "Delete Product"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ProductDeleteDialog
+        isOpen={!!deletingProduct}
+        onClose={() => setDeletingProduct(null)}
+        onConfirm={handleDelete}
+        productName={deletingProduct?.name || ""}
+      />
     </>
   );
 }

@@ -2,6 +2,7 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import { isProductNameUnique } from "@/lib/services/product-service";
+import { normalizeName } from "@/lib/schemas/product-schemas";
 
 /**
  * Handles GET requests to check product name uniqueness
@@ -18,7 +19,8 @@ export async function GET(request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const name = searchParams.get("name");
+    // Normalize the name parameter immediately upon receipt
+    const name = normalizeName(searchParams.get("name"));
     const excludeId = searchParams.get("excludeId");
 
     if (!name) {
@@ -28,6 +30,7 @@ export async function GET(request) {
       );
     }
 
+    // The service function now receives clean, normalized data
     const isUnique = await isProductNameUnique(
       session.user.id,
       name,

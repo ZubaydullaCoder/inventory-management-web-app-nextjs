@@ -4,7 +4,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { z } from "zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,38 +18,11 @@ import {
 } from "@/components/ui/select";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { queryKeys } from "@/lib/queryKeys";
-import { useDebouncedNameValidation } from "@/lib/hooks/use-debounced-name-validation";
-
-/**
- * Common selling units for products
- */
-const SELLING_UNITS = [
-  { value: "piece", label: "Piece" },
-  { value: "kg", label: "Kilogram (kg)" },
-  { value: "g", label: "Gram (g)" },
-  { value: "l", label: "Liter (l)" },
-  { value: "ml", label: "Milliliter (ml)" },
-  { value: "m", label: "Meter (m)" },
-  { value: "cm", label: "Centimeter (cm)" },
-  { value: "pack", label: "Pack" },
-  { value: "box", label: "Box" },
-];
-
-/**
- * Product form validation schema
- */
-const ProductFormSchema = z.object({
-  name: z.string().min(1, "Product name is required").max(255),
-  description: z.string().optional(),
-  sku: z.string().optional(),
-  sellingPrice: z.string().min(1, "Selling price is required"),
-  purchasePrice: z.string().optional(),
-  stock: z.string().optional(),
-  reorderPoint: z.string().optional(),
-  unit: z.string().min(1, "Selling unit is required"),
-  categoryId: z.string().optional(),
-  supplierId: z.string().optional(),
-});
+import { useDebouncedNameValidation } from "@/hooks/use-debounced-name-validation";
+import {
+  ProductFormSchema,
+  SELLING_UNITS,
+} from "@/lib/schemas/product-schemas";
 
 /**
  * Product creation form data
@@ -254,11 +226,12 @@ export default function ProductCreationForm({ onProductCreated }) {
 
   /**
    * Handles form submission
-   * @param {ProductFormData} data - Form data
+   * @param {ProductFormData} data - Form data (already trimmed by Zod schema)
    */
   const onSubmit = (data) => {
     // Check name uniqueness before submitting
-    if (!isUnique && hasChecked && watchedName.trim().length > 0) {
+    // Note: data.name is already trimmed by Zod schema
+    if (!isUnique && hasChecked && data.name.length > 0) {
       toast.error("Please use a unique product name");
       return;
     }

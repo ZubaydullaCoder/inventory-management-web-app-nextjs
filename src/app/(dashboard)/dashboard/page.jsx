@@ -2,7 +2,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import OnboardingGuide from "@/components/features/dashboard/onboarding-guide";
-import { getDashboardCounts } from "@/lib/data/dashboard";
+import { getDashboardCounts } from "@/lib/direct-prisma-get-data-for-server-components/dashboard";
 
 /**
  * Main dashboard page that shows onboarding guide for new users

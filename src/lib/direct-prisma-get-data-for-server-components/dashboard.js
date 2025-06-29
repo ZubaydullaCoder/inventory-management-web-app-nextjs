@@ -1,7 +1,7 @@
 // /src/lib/data/dashboard.js
 import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+import prisma from "@/lib/prisma";
 
 /**
  * Dashboard counts response data
