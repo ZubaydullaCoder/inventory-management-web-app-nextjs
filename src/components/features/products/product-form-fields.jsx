@@ -97,7 +97,11 @@ export default function ProductFormFields({
       {/* Description */}
       <div className="space-y-2">
         <Label htmlFor="description">Description</Label>
-        <Input id="description" {...register("description")} />
+        <Input
+          id="description"
+          {...register("description")}
+          placeholder="Product description (optional)"
+        />
       </div>
 
       {/* SKU */}
@@ -136,6 +140,8 @@ export default function ProductFormFields({
             type="number"
             step="0.01"
             {...register("sellingPrice")}
+            placeholder="0.00"
+            className={errors.sellingPrice ? "border-red-500" : ""}
           />
           {errors.sellingPrice && (
             <p className="text-sm text-red-500">
@@ -143,6 +149,7 @@ export default function ProductFormFields({
             </p>
           )}
         </div>
+
         <div className="space-y-2">
           <Label htmlFor="purchasePrice">Purchase Price</Label>
           <Input
@@ -150,6 +157,7 @@ export default function ProductFormFields({
             type="number"
             step="0.01"
             {...register("purchasePrice")}
+            placeholder="0.00"
           />
         </div>
       </div>
@@ -157,15 +165,22 @@ export default function ProductFormFields({
       {/* Stock Fields */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="stock">Stock</Label>
-          <Input id="stock" type="number" {...register("stock")} />
+          <Label htmlFor="stock">Initial Stock</Label>
+          <Input
+            id="stock"
+            type="number"
+            {...register("stock")}
+            placeholder="0"
+          />
         </div>
+
         <div className="space-y-2">
           <Label htmlFor="reorderPoint">Reorder Point</Label>
           <Input
             id="reorderPoint"
             type="number"
             {...register("reorderPoint")}
+            placeholder="0"
           />
         </div>
       </div>

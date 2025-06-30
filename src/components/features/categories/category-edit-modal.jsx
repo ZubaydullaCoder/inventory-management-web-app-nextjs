@@ -1,4 +1,4 @@
-// /src/components/features/products/product-edit-modal.jsx
+// /src/components/features/categories/category-edit-modal.jsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -13,49 +13,45 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import { useDebouncedNameValidation } from "@/hooks/use-debounced-product-name-validation";
-import { useProductEdit } from "@/hooks/use-product-edit-mutation";
-import {
-  EditProductSchema,
-  SELLING_UNITS,
-} from "@/lib/schemas/product-schemas";
+import { useCategoryEdit } from "@/hooks/use-category-edit";
+import { useDebouncedCategoryNameValidation } from "@/hooks/use-debounced-category-name-validation";
+import { CategoryFormSchema } from "@/lib/schemas/category-schemas";
 import { normalizeName } from "@/lib/utils";
-import ProductFormFields from "./product-form-fields";
-import ProductDeleteDialog from "./product-delete-dialog";
+import CategoryNameValidation from "./category-name-validation";
+import CategoryDeleteDialog from "./category-delete-dialog";
 
 /**
- * Reusable modal for editing a product.
+ * Reusable modal for editing a category.
  * @param {Object} props
- * @param {string} props.productId - The ID of the product to edit
+ * @param {string} props.categoryId - The ID of the category to edit
  * @param {boolean} props.isOpen - Controls if the modal is open
  * @param {Function} props.onClose - Callback to close the modal
  */
-export default function ProductEditModal({ productId, isOpen, onClose }) {
+export default function CategoryEditModal({ categoryId, isOpen, onClose }) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   // Custom dirty state for meaningful changes
   const [isFormActuallyDirty, setIsFormActuallyDirty] = useState(false);
 
   const {
-    product,
-    categories,
+    category,
     isLoading,
-    isLoadingCategories,
     updateMutation,
     deleteMutation,
     handleUpdate,
     handleDelete,
-  } = useProductEdit(productId, isOpen, onClose);
+  } = useCategoryEdit(categoryId, isOpen, onClose);
 
   const {
     register,
     handleSubmit,
     reset,
     watch,
-    setValue,
     formState: { errors },
   } = useForm({
-    resolver: zodResolver(EditProductSchema),
+    resolver: zodResolver(CategoryFormSchema),
   });
 
   // Watch the name field for validation
@@ -63,49 +59,31 @@ export default function ProductEditModal({ productId, isOpen, onClose }) {
   // Watch all form values for custom dirty check
   const watchedValues = watch();
 
-  // Pass the original product name to the hook for initial-state-aware validation
-  const nameValidation = useDebouncedNameValidation(
+  // Pass the original category name to the hook for initial-state-aware validation
+  const nameValidation = useDebouncedCategoryNameValidation(
     watchedName,
-    product?.name,
-    productId
+    category?.name,
+    categoryId
   );
 
   useEffect(() => {
-    if (product) {
+    if (category) {
       const defaultValues = {
-        name: product.name || "",
-        description: product.description || "",
-        sku: product.sku || "",
-        sellingPrice: product.sellingPrice?.toString() || "",
-        purchasePrice: product.purchasePrice?.toString() || "",
-        stock: product.stock?.toString() || "0",
-        reorderPoint: product.reorderPoint?.toString() || "0",
-        unit: SELLING_UNITS.some((u) => u.value === product.unit)
-          ? product.unit
-          : "piece",
-        categoryId: product.categoryId || "uncategorized",
+        name: category.name || "",
+        description: category.description || "",
       };
       reset(defaultValues);
       setIsFormActuallyDirty(false);
     }
-  }, [product, reset]);
+  }, [category, reset]);
 
   // Custom dirty check: only mark dirty if a meaningful (normalized) value changed
   useEffect(() => {
-    if (!product) return;
+    if (!category) return;
 
     const defaultValues = {
-      name: product.name || "",
-      description: product.description || "",
-      sku: product.sku || "",
-      sellingPrice: product.sellingPrice?.toString() || "",
-      purchasePrice: product.purchasePrice?.toString() || "",
-      stock: product.stock?.toString() || "0",
-      reorderPoint: product.reorderPoint?.toString() || "0",
-      unit: SELLING_UNITS.some((u) => u.value === product.unit)
-        ? product.unit
-        : "piece",
-      categoryId: product.categoryId || "uncategorized",
+      name: category.name || "",
+      description: category.description || "",
     };
 
     let dirty = false;
@@ -114,29 +92,24 @@ export default function ProductEditModal({ productId, isOpen, onClose }) {
       const originalValue = defaultValues[key];
 
       // Compare normalized string values for meaningful changes
-      if (key === "name" || key === "description" || key === "sku") {
-        if (normalizeName(formValue) !== normalizeName(originalValue)) {
-          dirty = true;
-          break;
-        }
-      } else if (formValue?.toString() !== (originalValue ?? "").toString()) {
+      if (normalizeName(formValue) !== normalizeName(originalValue)) {
         dirty = true;
         break;
       }
     }
     setIsFormActuallyDirty(dirty);
-  }, [watchedValues, product]);
+  }, [watchedValues, category]);
 
   const onSubmit = (data) => {
     // Check name uniqueness if name has changed
     // Note: data.name is already normalized by Zod schema's .transform()
     if (
-      product &&
-      data.name !== product.name &&
+      category &&
+      data.name !== category.name &&
       !nameValidation.isUnique &&
       nameValidation.hasChecked
     ) {
-      toast.error("Please use a unique product name");
+      toast.error("Please use a unique category name");
       return;
     }
     handleUpdate(data);
@@ -148,7 +121,7 @@ export default function ProductEditModal({ productId, isOpen, onClose }) {
 
   // Derived state logic now uses normalization for comparison
   const hasNameChanged =
-    product && normalizeName(watchedName) !== normalizeName(product.name);
+    category && normalizeName(watchedName) !== normalizeName(category.name);
   const isNameInvalid =
     hasNameChanged && !nameValidation.isUnique && nameValidation.hasChecked;
   const isNameBeingChecked = hasNameChanged && nameValidation.isChecking;
@@ -171,22 +144,53 @@ export default function ProductEditModal({ productId, isOpen, onClose }) {
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Product</DialogTitle>
+            <DialogTitle>Edit Category</DialogTitle>
             <DialogDescription>
-              Update the details for this product.
+              Update the details for this category.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <ProductFormFields
-              register={register}
-              errors={errors}
-              setValue={setValue}
-              watch={watch}
-              categories={categories}
-              isLoadingCategories={isLoadingCategories}
-              nameValidation={nameValidation}
-              product={product}
-            />
+            {/* Category Name */}
+            <div className="space-y-2">
+              <Label htmlFor="name">Category Name *</Label>
+              <Input
+                id="name"
+                {...register("name")}
+                className={
+                  errors.name ||
+                  (!nameValidation.isUnique &&
+                    nameValidation.hasChecked &&
+                    category &&
+                    watchedName !== category.name)
+                    ? "border-red-500"
+                    : ""
+                }
+                placeholder="Enter category name"
+              />
+              {errors.name && (
+                <p className="text-sm text-red-500">{errors.name.message}</p>
+              )}
+              <CategoryNameValidation
+                watchedName={watchedName}
+                category={category}
+                {...nameValidation}
+              />
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Input
+                id="description"
+                {...register("description")}
+                placeholder="Category description (optional)"
+              />
+              {errors.description && (
+                <p className="text-sm text-red-500">
+                  {errors.description.message}
+                </p>
+              )}
+            </div>
 
             {/* Action Buttons */}
             <div className="flex justify-between pt-4">
@@ -220,11 +224,12 @@ export default function ProductEditModal({ productId, isOpen, onClose }) {
         </DialogContent>
       </Dialog>
 
-      <ProductDeleteDialog
+      <CategoryDeleteDialog
         isOpen={showDeleteDialog}
         onClose={() => setShowDeleteDialog(false)}
         onConfirm={handleDeleteConfirm}
-        productName={product?.name || ""}
+        categoryName={category?.name || ""}
+        productCount={category?._count?.products || 0}
       />
     </>
   );

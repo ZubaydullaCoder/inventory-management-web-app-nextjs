@@ -18,6 +18,7 @@ import {
  * @param {boolean} props.isOpen - Whether dialog is open
  * @param {Function} props.onClose - Callback to close dialog
  * @param {Function} props.onConfirm - Callback when delete is confirmed
+ * @param {boolean} [props.isPending=false] - Whether the confirm action is pending
  * @param {string} props.productName - Name of product to delete
  * @returns {JSX.Element} Delete confirmation dialog
  */
@@ -25,13 +26,9 @@ export default function ProductDeleteDialog({
   isOpen,
   onClose,
   onConfirm,
+  isPending = false,
   productName,
 }) {
-  const handleConfirm = () => {
-    onClose();
-    onConfirm();
-  };
-
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent>
@@ -46,10 +43,11 @@ export default function ProductDeleteDialog({
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            onClick={handleConfirm}
+            onClick={onConfirm}
+            disabled={isPending}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            Delete Product
+            {isPending ? "Deleting..." : "Delete Product"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -6,52 +6,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import DataTable from "@/components/ui/data-table";
 import EmptyState from "@/components/ui/empty-state";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { createProductColumns } from "@/components/features/products/product-columns";
 import { Package } from "lucide-react";
 import { queryKeys } from "@/lib/queryKeys";
 import ProductEditModal from "./product-edit-modal";
-
-/**
- * Fetches the list of products from the API.
- * @returns {Promise<Object>} The full paginated data object
- */
-async function fetchProducts() {
-  const response = await fetch("/api/products?limit=100");
-  if (!response.ok) {
-    throw new Error("Failed to fetch products");
-  }
-  const data = await response.json();
-  return data.data;
-}
-
-/**
- * Deletes a product via API
- * @param {string} productId - Product ID to delete
- * @returns {Promise<Object>} Delete response
- */
-async function deleteProduct(productId) {
-  const response = await fetch(`/api/products/${productId}`, {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || "Failed to delete product");
-  }
-
-  return await response.json();
-}
+import ProductDeleteDialog from "./product-delete-dialog";
+import { fetchProducts, deleteProduct } from "@/lib/api/products-api";
 
 /**
  * Client component to render the products data table.
@@ -162,31 +122,13 @@ export default function ProductDataTable({ initialProductsData }) {
           onClose={() => setEditingProductId(null)}
         />
       )}
-      <AlertDialog
-        open={!!deletingProduct}
-        onOpenChange={() => setDeletingProduct(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Product</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{deletingProduct?.name}"? This
-              action cannot be undone. If this product has transaction history,
-              the deletion will be blocked.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={deleteMutation.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleteMutation.isPending ? "Deleting..." : "Delete Product"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ProductDeleteDialog
+        isOpen={!!deletingProduct}
+        onClose={() => setDeletingProduct(null)}
+        onConfirm={handleDelete}
+        productName={deletingProduct?.name || ""}
+        isPending={deleteMutation.isPending}
+      />
     </>
   );
 }

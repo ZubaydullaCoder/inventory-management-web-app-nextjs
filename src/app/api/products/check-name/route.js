@@ -2,7 +2,7 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import { isProductNameUnique } from "@/lib/services/product-service";
-import { normalizeName } from "@/lib/schemas/product-schemas";
+import { normalizeName } from "@/lib/utils";
 
 /**
  * Handles GET requests to check product name uniqueness

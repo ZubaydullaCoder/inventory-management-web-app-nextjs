@@ -1,18 +1,18 @@
-// /src/hooks/use-debounced-name-validation.js
+// /src/hooks/use-debounced-category-name-validation.js
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useDebounce } from "use-debounce";
-import { normalizeName } from "@/lib/schemas/product-schemas";
+import { normalizeName } from "@/lib/utils";
 
 /**
- * Hook for debounced product name validation.
+ * Hook for debounced category name validation.
  * Only performs validation if the normalized name has changed and is not the initial name.
- * @param {string} name - Current product name from the form
- * @param {string} initialName - The original name of the product when loaded
- * @param {string} [excludeId] - Product ID to exclude from validation (for updates)
+ * @param {string} name - Current category name from the form
+ * @param {string} initialName - The original name of the category when loaded
+ * @param {string} [excludeId] - Category ID to exclude from validation (for updates)
  * @param {number} [delay=500] - Debounce delay in milliseconds
  * @returns {Object} Validation state object
  */
-export function useDebouncedNameValidation(
+export function useDebouncedCategoryNameValidation(
   name,
   initialName,
   excludeId = null,
@@ -66,7 +66,7 @@ export function useDebouncedNameValidation(
           params.append("excludeId", excludeId);
         }
 
-        const response = await fetch(`/api/products/check-name?${params}`);
+        const response = await fetch(`/api/categories/check-name?${params}`);
         const data = await response.json();
 
         if (!response.ok) {

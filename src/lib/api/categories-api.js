@@ -11,3 +11,22 @@ export async function fetchCategories() {
   const data = await response.json();
   return data.data;
 }
+
+/**
+ * Deletes a category via API
+ * @param {string} categoryId - Category ID to delete
+ * @returns {Promise<Object>} Delete response
+ */
+export async function deleteCategory(categoryId) {
+  const response = await fetch(`/api/categories/${categoryId}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to delete category");
+  }
+
+  return await response.json();
+}

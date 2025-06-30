@@ -1,16 +1,6 @@
 // /src/lib/schemas/product-schemas.js
 import { z } from "zod";
-
-/**
- * Normalization utility function.
- * Trims whitespace from start/end and collapses multiple spaces between words into one.
- * @param {string | null | undefined} str - The string to normalize.
- * @returns {string} The normalized string.
- */
-export function normalizeName(str) {
-  if (!str) return "";
-  return str.trim().replace(/\s+/g, " ");
-}
+import { normalizeName } from "@/lib/utils";
 
 /**
  * Product creation form validation schema
@@ -51,6 +41,26 @@ export const EditProductSchema = z.object({
   reorderPoint: z.string().optional(),
   unit: z.string().min(1, "Selling unit is required"),
   categoryId: z.string().optional(),
+});
+
+/**
+ * Product creation API validation schema
+ */
+export const CreateProductSchema = z.object({
+  name: z.string().min(1, "Product name is required").max(255),
+  description: z.string().optional(),
+  sku: z.string().optional(),
+  sellingPrice: z.number().positive("Selling price must be positive"),
+  purchasePrice: z.number().positive().optional(),
+  stock: z.number().int().min(0, "Stock cannot be negative").optional(),
+  reorderPoint: z
+    .number()
+    .int()
+    .min(0, "Reorder point cannot be negative")
+    .optional(),
+  unit: z.string().optional(),
+  categoryId: z.string().optional(),
+  supplierId: z.string().optional(),
 });
 
 /**

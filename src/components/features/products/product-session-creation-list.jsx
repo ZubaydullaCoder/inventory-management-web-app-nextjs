@@ -102,7 +102,7 @@ function ProductListItem({ product, onEdit, onDelete }) {
  * @param {Function} props.onEditProduct - Edit product callback
  * @returns {JSX.Element} Session creation list
  */
-export default function SessionCreationList({ onEditProduct }) {
+export default function ProductSessionCreationList({ onEditProduct }) {
   const queryClient = useQueryClient();
   const [deletingProduct, setDeletingProduct] = useState(null);
 
@@ -236,6 +236,7 @@ export default function SessionCreationList({ onEditProduct }) {
         onClose={() => setDeletingProduct(null)}
         onConfirm={handleDelete}
         productName={deletingProduct?.name || ""}
+        isPending={deleteMutation.isPending}
       />
     </>
   );

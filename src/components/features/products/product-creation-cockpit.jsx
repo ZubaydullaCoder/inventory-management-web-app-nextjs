@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import ProductCreationForm from "@/components/features/products/product-creation-form";
-import SessionCreationList from "@/components/features/products/product-session-creation-list";
+import ProductSessionCreationList from "@/components/features/products/product-session-creation-list";
 import ProductEditModal from "@/components/features/products/product-edit-modal";
 
 /**
@@ -37,7 +37,7 @@ export default function ProductCreationCockpit() {
 
         {/* Right Column: Session Creation List */}
         <div>
-          <SessionCreationList onEditProduct={handleEditProduct} />
+          <ProductSessionCreationList onEditProduct={handleEditProduct} />
         </div>
       </div>
 

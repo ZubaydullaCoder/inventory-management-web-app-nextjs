@@ -6,26 +6,7 @@ import {
   createProduct,
   getProductsByUser,
 } from "@/lib/services/product-service";
-
-/**
- * Product creation schema for validation
- */
-const CreateProductSchema = z.object({
-  name: z.string().min(1, "Product name is required").max(255),
-  description: z.string().optional(),
-  sku: z.string().optional(),
-  sellingPrice: z.number().positive("Selling price must be positive"),
-  purchasePrice: z.number().positive().optional(),
-  stock: z.number().int().min(0, "Stock cannot be negative").optional(),
-  reorderPoint: z
-    .number()
-    .int()
-    .min(0, "Reorder point cannot be negative")
-    .optional(),
-  unit: z.string().optional(),
-  categoryId: z.string().optional(),
-  supplierId: z.string().optional(),
-});
+import { CreateProductSchema } from "@/lib/schemas/product-schemas";
 
 /**
  * Handles POST requests to create a new product
