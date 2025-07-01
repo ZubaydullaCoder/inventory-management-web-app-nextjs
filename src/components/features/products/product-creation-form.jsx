@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDebouncedNameValidation } from "@/hooks/use-debounced-product-name-validation";
-import { useProductCreation } from "@/hooks/use-product-create-mutation";
+import { useProductCreateMutation } from "@/hooks/use-product-create-mutation";
 import { ProductFormSchema } from "@/lib/schemas/product-schemas";
 import ProductFormFields from "./product-form-fields";
 
@@ -44,7 +44,7 @@ export default function ProductCreationForm({ onProductCreated }) {
   const watchedName = watch("name");
   const nameValidation = useDebouncedNameValidation(watchedName);
   const { categories, isLoadingCategories, createProductMutation } =
-    useProductCreation(onProductCreated);
+    useProductCreateMutation(onProductCreated);
 
   /**
    * Handles form submission

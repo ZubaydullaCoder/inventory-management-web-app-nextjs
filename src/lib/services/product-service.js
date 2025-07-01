@@ -20,7 +20,7 @@ export async function isProductNameUnique(
         userId,
         name: {
           equals: name,
-          mode: "insensitive", // Case-insensitive comparison
+          mode: "insensitive",
         },
         ...(excludeProductId && { id: { not: excludeProductId } }),
       },
@@ -140,8 +140,6 @@ export async function createProduct(userId, productData) {
     }
     console.error("Error creating product:", error);
     throw new Error(error.message || "Failed to create product");
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -181,8 +179,6 @@ export async function getProductsByUser(userId, options = {}) {
   } catch (error) {
     console.error("Error fetching products:", error);
     throw new Error("Failed to fetch products");
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -209,8 +205,6 @@ export async function getProductById(userId, productId) {
   } catch (error) {
     console.error("Error fetching product:", error);
     throw new Error("Failed to fetch product");
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -285,8 +279,6 @@ export async function updateProduct(userId, productId, productData) {
     }
     console.error("Error updating product:", error);
     throw new Error(error.message || "Failed to update product");
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -329,7 +321,5 @@ export async function deleteProductById(userId, productId) {
     }
     console.error("Error deleting product:", error);
     throw new Error(error.message || "Failed to delete product");
-  } finally {
-    await prisma.$disconnect();
   }
 }

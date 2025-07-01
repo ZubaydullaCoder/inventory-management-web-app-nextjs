@@ -1,7 +1,5 @@
 // /src/lib/services/category-service.js
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import prisma from "@/lib/prisma";
 
 /**
  * Category creation data
@@ -27,14 +25,13 @@ export async function getCategoriesByUser(userId) {
     const categories = await prisma.category.findMany({
       where: { userId },
       orderBy: { name: "asc" },
+      include: { _count: { select: { products: true } } },
     });
 
     return categories;
   } catch (error) {
     console.error("Error fetching categories:", error);
     throw new Error("Failed to fetch categories");
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -57,8 +54,6 @@ export async function getCategoryById(userId, categoryId) {
   } catch (error) {
     console.error("Error fetching category:", error);
     throw new Error("Failed to fetch category");
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -85,8 +80,6 @@ export async function createCategory(userId, categoryData) {
     }
     console.error("Error creating category:", error);
     throw new Error("Failed to create category");
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -124,8 +117,6 @@ export async function updateCategory(userId, categoryId, categoryData) {
     }
     console.error("Error updating category:", error);
     throw new Error(error.message || "Failed to update category");
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -170,7 +161,5 @@ export async function deleteCategoryById(userId, categoryId) {
   } catch (error) {
     console.error("Error deleting category:", error);
     throw new Error(error.message || "Failed to delete category");
-  } finally {
-    await prisma.$disconnect();
   }
 }

@@ -56,7 +56,5 @@ export async function GET(request) {
       { error: "Failed to check category name" },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

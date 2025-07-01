@@ -1,5 +1,4 @@
 // /src/lib/data/dashboard.js
-import { PrismaClient } from "@prisma/client";
 
 import prisma from "@/lib/prisma";
 
@@ -30,7 +29,5 @@ export async function getDashboardCounts(userId) {
   } catch (error) {
     console.error("Error fetching dashboard counts:", error);
     throw new Error("Failed to fetch dashboard counts");
-  } finally {
-    await prisma.$disconnect();
   }
 }

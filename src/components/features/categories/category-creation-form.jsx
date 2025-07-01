@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useCategoryCreation } from "@/hooks/use-category-creation";
+import { useCategoryCreateMutation } from "@/hooks/use-category-create-mutation";
 import { useDebouncedCategoryNameValidation } from "@/hooks/use-debounced-category-name-validation";
 import { CategoryFormSchema } from "@/lib/schemas/category-schemas";
 import CategoryNameValidation from "./category-name-validation";
@@ -37,7 +37,8 @@ export default function CategoryCreationForm({ onCategoryCreated }) {
 
   const watchedName = watch("name");
   const nameValidation = useDebouncedCategoryNameValidation(watchedName);
-  const { createCategoryMutation } = useCategoryCreation(onCategoryCreated);
+  const { createCategoryMutation } =
+    useCategoryCreateMutation(onCategoryCreated);
 
   /**
    * Handles form submission

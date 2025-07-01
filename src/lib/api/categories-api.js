@@ -30,3 +30,25 @@ export async function deleteCategory(categoryId) {
 
   return await response.json();
 }
+
+/**
+ * Creates a new category via API
+ * @param {Object} categoryData - Category data to create
+ * @returns {Promise<Object>} API response
+ */
+export async function createCategory(categoryData) {
+  const response = await fetch("/api/categories", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(categoryData),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to create category");
+  }
+
+  return await response.json();
+}

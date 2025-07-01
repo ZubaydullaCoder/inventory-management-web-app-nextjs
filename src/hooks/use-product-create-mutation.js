@@ -9,7 +9,7 @@ import { fetchCategories } from "@/lib/api/categories-api";
  * @param {Function} [onProductCreated] - Optional callback when product is created
  * @returns {Object} Product creation utilities and state
  */
-export function useProductCreation(onProductCreated) {
+export function useProductCreateMutation(onProductCreated) {
   const queryClient = useQueryClient();
 
   // Fetch categories

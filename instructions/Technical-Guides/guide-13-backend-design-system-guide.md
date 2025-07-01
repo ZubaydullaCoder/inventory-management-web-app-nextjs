@@ -1,6 +1,3 @@
-<!-- Guide 13: Backend Design System & Service Architecture -->
-<!-- filepath: d:\web development\2025\codevision works\inventory-management-app\inventory-nextjs-copilot-pro-chat-mode-4\instructions\Technical-Guides\guide-13-backend-design-system-guide.md -->
-
 ### **Guide 13: Backend Design System & Service Architecture**
 
 **Version:** 1.0
@@ -140,3 +137,15 @@ This reinforces the structure defined in the main architecture document.
 - **Never Bypass a Layer:** The AI is forbidden from placing Prisma queries in API routes or complex business logic in data access functions.
 - **Compose Reusable Logic:** The AI must reuse the standard "service components" for auth, validation, and error handling in every API endpoint.
 - **Generate Clear Contracts:** All functions in the Service and Data layers must have complete JSDoc annotations, defining their parameters and return values, to serve as the clear "API contract" for the layer above.
+
+## Prisma Client Connection Management
+
+**Important:** When using Prisma Client in a Next.js or serverless environment, always use the singleton pattern for the Prisma client instance. Do **not** call `prisma.$disconnect()` after each query or request. Prisma manages the connection pool automatically, and manual disconnection can cause connection errors, especially in development or serverless environments. Only disconnect the client when the entire application is shutting down (rare in serverless/Next.js).
+
+**Best Practice:**
+
+- Create and export a single Prisma client instance (singleton) in a shared file (e.g., `src/lib/prisma.js`).
+- Import and use this instance throughout your app.
+- Never call `prisma.$disconnect()` in API routes, service files, or after queries.
+
+This prevents accidental disconnections and ensures stable database connectivity.

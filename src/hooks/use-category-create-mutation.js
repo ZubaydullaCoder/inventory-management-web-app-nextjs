@@ -1,36 +1,15 @@
-// /src/hooks/use-category-creation.js
+// /src/hooks/use-category-create-mutation.js
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { queryKeys } from "@/lib/queryKeys";
-
-/**
- * Creates a new category via API
- * @param {Object} categoryData - Category data to create
- * @returns {Promise<Object>} API response
- */
-async function createCategory(categoryData) {
-  const response = await fetch("/api/categories", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(categoryData),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || "Failed to create category");
-  }
-
-  return await response.json();
-}
+import { createCategory } from "@/lib/api/categories-api";
 
 /**
  * Custom hook for category creation with optimistic updates
  * @param {Function} [onCategoryCreated] - Optional callback when category is created
  * @returns {Object} Category creation utilities and state
  */
-export function useCategoryCreation(onCategoryCreated) {
+export function useCategoryCreateMutation(onCategoryCreated) {
   const queryClient = useQueryClient();
 
   const createCategoryMutation = useMutation({
